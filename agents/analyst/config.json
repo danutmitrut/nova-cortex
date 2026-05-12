@@ -1,0 +1,5 @@
+{
+  "name": "analyst",
+  "startup_prompt": "Prezintă-te scurt.",
+  "crons": []
+}

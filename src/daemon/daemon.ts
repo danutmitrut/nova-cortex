@@ -85,13 +85,21 @@ export class Daemon {
     }
   }
 
-  // ── Pornește toți agenții descoperiți ────────────────────────
+  // ── Pornește toți agenții — staggered cu 3s între fiecare ───
+  // De ce staggered și nu simultan?
+  //   Fiecare agent pornește Claude Code (proces greu).
+  //   Dacă avem 5 agenți și toți pornesc în același moment,
+  //   sistemul e supraîncărcat în primele secunde.
+  //   3s între agenți = boot lin, fără vârfuri de CPU.
   private startAllAgents(): void {
-    for (const [name, agent] of this.agents.entries()) {
-      agent.start();
-      // Pornim timerul de stabilitate de la primul start
-      this.watchdogs.get(name)?.scheduleStabilityCheck();
-    }
+    const agents = Array.from(this.agents.entries());
+    agents.forEach(([name, agent], index) => {
+      setTimeout(() => {
+        agent.start();
+        this.watchdogs.get(name)?.scheduleStabilityCheck();
+        console.log(`[daemon] Agent "${name}" pornit (${index + 1}/${agents.length})`);
+      }, index * 3_000); // 0s, 3s, 6s, 9s, ...
+    });
   }
 
   // ── Returnează statusul tuturor agenților ───────────────────
