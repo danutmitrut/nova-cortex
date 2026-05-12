@@ -15,20 +15,26 @@
   .panel-title { color: #666; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
   /* Agents */
   .agent-list { display: flex; flex-direction: column; gap: 8px; }
-  .agent-row { display: flex; align-items: center; gap: 10px; background: #161616; border: 1px solid #2a2a2a; border-radius: 6px; padding: 10px 12px; }
+  .agent-row { display: flex; align-items: center; gap: 8px; background: #161616; border: 1px solid #2a2a2a; border-radius: 6px; padding: 10px 12px; }
   .agent-row.alive { border-color: #1a4a2a; }
   .agent-row.dead { border-color: #4a1a1a; }
+  .agent-row.disabled { border-color: #2a2a2a; opacity: 0.55; }
   .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .dot.green { background: #7ee8a2; box-shadow: 0 0 5px #7ee8a2; }
   .dot.red { background: #e87e7e; }
-  .agent-name { flex: 1; font-size: 0.9rem; }
-  .agent-status { color: #555; font-size: 0.72rem; margin-right: 8px; }
-  .btn { border: none; border-radius: 4px; padding: 4px 10px; font-size: 0.72rem; cursor: pointer; font-family: inherit; }
-  .btn-start { background: #1a4a2a; color: #7ee8a2; }
-  .btn-start:hover { background: #1f5a32; }
-  .btn-stop { background: #4a1a1a; color: #e87e7e; }
-  .btn-stop:hover { background: #5a2020; }
-  .btn-send { background: #1a2a4a; color: #7eb8e8; padding: 8px 16px; font-size: 0.8rem; width: 100%; margin-top: 10px; }
+  .dot.gray { background: #444; }
+  .agent-name { flex: 1; font-size: 0.88rem; }
+  .agent-meta { color: #555; font-size: 0.7rem; margin-right: 4px; white-space: nowrap; }
+  .btn { border: none; border-radius: 4px; padding: 4px 9px; font-size: 0.7rem; cursor: pointer; font-family: inherit; flex-shrink: 0; }
+  .btn-start  { background: #1a4a2a; color: #7ee8a2; }
+  .btn-start:hover  { background: #1f5a32; }
+  .btn-stop   { background: #4a1a1a; color: #e87e7e; }
+  .btn-stop:hover   { background: #5a2020; }
+  .btn-enable  { background: #1a2a1a; color: #7eb87e; border: 1px solid #2a4a2a; }
+  .btn-enable:hover  { background: #1f3a1f; }
+  .btn-disable { background: #1e1e1e; color: #666; border: 1px solid #2a2a2a; }
+  .btn-disable:hover { background: #252525; }
+  .btn-send { background: #1a2a4a; color: #7eb8e8; padding: 8px 16px; font-size: 0.8rem; width: 100%; margin-top: 10px; border: none; border-radius: 4px; cursor: pointer; font-family: inherit; }
   .btn-send:hover { background: #1f3260; }
   .btn-send:disabled { opacity: 0.4; cursor: default; }
   /* Bus form */
@@ -36,7 +42,7 @@
   select { margin-bottom: 8px; }
   select:focus, textarea:focus { border-color: #444; }
   textarea { resize: vertical; min-height: 70px; }
-  .toast { position: fixed; bottom: 20px; right: 20px; background: #1a4a2a; color: #7ee8a2; padding: 8px 16px; border-radius: 6px; font-size: 0.8rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: #1a4a2a; color: #7ee8a2; padding: 8px 16px; border-radius: 6px; font-size: 0.8rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 100; }
   .toast.show { opacity: 1; }
   .toast.error { background: #4a1a1a; color: #e87e7e; }
   /* Bus messages */
@@ -54,13 +60,22 @@
   .empty { color: #333; font-size: 0.8rem; font-style: italic; }
   .refresh-badge { float: right; color: #333; font-size: 0.65rem; }
   /* Tabs conversații */
-  .tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
   .tab { background: #161616; border: 1px solid #2a2a2a; border-radius: 4px; padding: 5px 14px; font-size: 0.75rem; cursor: pointer; color: #666; font-family: inherit; }
   .tab.active { background: #1a2a4a; border-color: #2a4a6a; color: #7eb8e8; }
   .tab:hover:not(.active) { background: #1e1e1e; color: #888; }
   .conv-box { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 5px; height: 320px; overflow-y: auto; padding: 10px; font-size: 0.75rem; line-height: 1.6; }
   .conv-line { color: #999; padding: 1px 0; border-bottom: 1px solid #111; }
   .conv-line:last-child { border-bottom: none; }
+  /* Heartbeat table */
+  .hb-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+  .hb-table th { color: #444; font-weight: normal; text-align: left; padding: 4px 8px; border-bottom: 1px solid #1e1e1e; white-space: nowrap; }
+  .hb-table td { padding: 6px 8px; border-bottom: 1px solid #181818; color: #888; white-space: nowrap; }
+  .hb-table tr:last-child td { border-bottom: none; }
+  .hb-table td.name { color: #ccc; }
+  .hb-table td.ok { color: #7ee8a2; }
+  .hb-table td.warn { color: #e8c87e; }
+  .hb-table td.last { color: #555; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 </style>
 </head>
 <body>
@@ -81,6 +96,12 @@
     <textarea id="bus-content" placeholder='ex: "Analizează tendințele AI din 2025"' rows="3"></textarea>
     <button class="btn btn-send" id="bus-send" onclick="sendBus()">Trimite</button>
   </div>
+</div>
+
+<!-- Heartbeat panel -->
+<div class="panel" style="margin-bottom:20px">
+  <div class="panel-title">Heartbeat agenți <span class="refresh-badge" id="hb-ts"></span></div>
+  <div id="hb-content"><div class="empty">Aștept heartbeat-uri...</div></div>
 </div>
 
 <div class="grid">
@@ -136,20 +157,27 @@
       const { agents } = await get('/api/status');
       agentNames = (agents || []).map(a => a.name);
       updateAgentDropdown();
+      buildTabs();
 
       const el = document.getElementById('agents');
       if (!agents?.length) { el.innerHTML = '<div class="empty">Niciun agent pornit.</div>'; return; }
 
-      el.innerHTML = agents.map(a => `
-        <div class="agent-row ${a.alive ? 'alive' : 'dead'}">
-          <div class="dot ${a.alive ? 'green' : 'red'}"></div>
-          <span class="agent-name">${a.name}</span>
-          <span class="agent-status">${a.status}</span>
-          ${a.alive
-            ? `<button class="btn btn-stop" onclick="agentAction('stop','${a.name}')">Stop</button>`
-            : `<button class="btn btn-start" onclick="agentAction('start','${a.name}')">Start</button>`
-          }
-        </div>`).join('');
+      el.innerHTML = agents.map(a => {
+        const dotCls = a.alive ? 'green' : 'red';
+        const rowCls = a.alive ? 'alive' : 'dead';
+        const toggleBtn = a.alive
+          ? `<button class="btn btn-stop"    onclick="agentAction('stop','${a.name}')">Stop</button>`
+          : `<button class="btn btn-start"   onclick="agentAction('start','${a.name}')">Start</button>`;
+        const enableBtn = `<button class="btn btn-disable" onclick="agentAction('disable','${a.name}')" title="Dezactivează">Off</button>`;
+        return `
+        <div class="agent-row ${rowCls}">
+          <div class="dot ${dotCls}"></div>
+          <span class="agent-name">${esc(a.name)}</span>
+          <span class="agent-meta">${esc(a.status)}</span>
+          ${toggleBtn}
+          ${enableBtn}
+        </div>`;
+      }).join('');
       document.getElementById('agent-ts').textContent = new Date().toLocaleTimeString();
     } catch {
       document.getElementById('agents').innerHTML = '<div class="empty">Daemon oprit.</div>';
@@ -160,14 +188,16 @@
     const sel = document.getElementById('bus-to');
     const current = sel.value;
     sel.innerHTML = '<option value="">— alege agent —</option>' +
-      agentNames.map(n => `<option value="${n}" ${n===current?'selected':''}>${n}</option>`).join('');
+      agentNames.map(n => `<option value="${n}" ${n===current?'selected':''}>${esc(n)}</option>`).join('');
   }
 
-  // ── Agent start/stop ────────────────────────────────────────
+  // ── Agent actions (start/stop/enable/disable) ───────────────
   async function agentAction(action, name) {
     const r = await post('/api/agent', { action, name });
-    toast(r.ok ? `${name} ${action === 'start' ? 'pornit' : 'oprit'}` : (r.error || 'Eroare'), !r.ok);
+    const labels = { start: 'pornit', stop: 'oprit', enable: 'activat', disable: 'dezactivat' };
+    toast(r.ok ? `${name} ${labels[action] || action}` : (r.error || 'Eroare'), !r.ok);
     setTimeout(fetchAgents, 500);
+    setTimeout(fetchHeartbeats, 600);
   }
 
   // ── Send bus message ────────────────────────────────────────
@@ -190,6 +220,55 @@
     }
   }
 
+  // ── Heartbeats ──────────────────────────────────────────────
+  async function fetchHeartbeats() {
+    try {
+      const { heartbeats } = await get('/api/heartbeats');
+      const el = document.getElementById('hb-content');
+
+      if (!heartbeats?.length) {
+        el.innerHTML = '<div class="empty">Niciun heartbeat disponibil. Agenții scriu heartbeat la 60s.</div>';
+        return;
+      }
+
+      const rows = heartbeats.map(h => {
+        const uptime = h.uptimeSeconds != null ? fmtDuration(h.uptimeSeconds) : '—';
+        const idle   = h.idleSeconds   != null ? fmtDuration(h.idleSeconds)   : '—';
+        const idleCls = (h.idleSeconds > 300) ? 'warn' : 'ok';
+        const last = esc((h.lastLine || '').slice(0, 60));
+        const ts   = (h.timestamp || '').slice(11, 19);
+        return `<tr>
+          <td class="name">${esc(h.agent || '')}</td>
+          <td class="${h.alive ? 'ok' : 'warn'}">${esc(h.status || '')}</td>
+          <td>${uptime}</td>
+          <td class="${idleCls}">${idle}</td>
+          <td class="last">${last}</td>
+          <td style="color:#333">${ts}</td>
+          <td>
+            <button class="btn btn-enable"  onclick="agentAction('enable','${esc(h.agent || '')}')" title="Activează">On</button>
+            <button class="btn btn-disable" onclick="agentAction('disable','${esc(h.agent || '')}')" title="Dezactivează">Off</button>
+          </td>
+        </tr>`;
+      }).join('');
+
+      el.innerHTML = `<table class="hb-table">
+        <thead><tr>
+          <th>Agent</th><th>Status</th><th>Uptime</th><th>Idle</th><th>Ultima linie</th><th>Beat</th><th></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+      document.getElementById('hb-ts').textContent = new Date().toLocaleTimeString();
+    } catch {
+      document.getElementById('hb-content').innerHTML = '<div class="empty">Heartbeat indisponibil.</div>';
+    }
+  }
+
+  function fmtDuration(sec) {
+    if (sec < 60)   return `${sec}s`;
+    if (sec < 3600) return `${Math.floor(sec / 60)}m`;
+    return `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`;
+  }
+
   // ── Bus messages ────────────────────────────────────────────
   async function fetchBus() {
     try {
@@ -198,7 +277,7 @@
       if (!messages?.length) { el.innerHTML = '<div class="empty">Niciun mesaj procesat.</div>'; return; }
       el.innerHTML = messages.map(m => `
         <div class="msg">
-          <div class="msg-meta">${m.from} → ${m.to} · ${(m.timestamp||'').slice(0,19)}</div>
+          <div class="msg-meta">${esc(m.from||'')} → ${esc(m.to||'')} · ${(m.timestamp||'').slice(0,19)}</div>
           <div class="msg-content">${esc(m.content||'')}</div>
         </div>`).join('');
     } catch {}
@@ -226,7 +305,7 @@
   }
 
   function esc(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   // ── Conversații per agent ───────────────────────────────────
@@ -237,7 +316,7 @@
     if (!agentNames.length) { el.innerHTML = '<div class="empty">Niciun agent activ.</div>'; return; }
 
     el.innerHTML = agentNames.map(n =>
-      `<button class="tab ${n === activeAgent ? 'active' : ''}" onclick="selectAgent('${n}')">${n}</button>`
+      `<button class="tab ${n === activeAgent ? 'active' : ''}" onclick="selectAgent('${esc(n)}')">${esc(n)}</button>`
     ).join('');
 
     if (!activeAgent && agentNames.length) selectAgent(agentNames[0]);
@@ -252,7 +331,7 @@
   async function fetchConversation() {
     if (!activeAgent) return;
     try {
-      const { lines } = await get(`/api/output/${activeAgent}`);
+      const { lines } = await get(`/api/output/${encodeURIComponent(activeAgent)}`);
       const box = document.getElementById('conv-box');
       const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 10;
 
@@ -265,15 +344,14 @@
   // ── Polling ─────────────────────────────────────────────────
   function refresh() {
     fetchAgents();
+    fetchHeartbeats();
     fetchBus();
     fetchLogs();
-    buildTabs();
     fetchConversation();
   }
   refresh();
   setInterval(refresh, 3000);
 
-  // Keyboard shortcut: Enter în textarea trimite mesajul (Ctrl+Enter)
   document.getElementById('bus-content').addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.ctrlKey) sendBus();
   });
