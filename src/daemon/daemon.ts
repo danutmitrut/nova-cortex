@@ -23,11 +23,13 @@ export class Daemon {
   private watchdogs: Map<string, Watchdog> = new Map();
   private agentsDir: string;
   private stateDir: string;
+  private busDir: string;
   private ipc: IpcServer;
 
-  constructor(agentsDir: string, stateDir: string) {
+  constructor(agentsDir: string, stateDir: string, busDir: string) {
     this.agentsDir = resolve(agentsDir);
     this.stateDir = resolve(stateDir);
+    this.busDir = resolve(busDir);
     this.ipc = new IpcServer(this);
   }
 
@@ -65,7 +67,7 @@ export class Daemon {
       }
 
       try {
-        const agent = new AgentProcess(agentDir, this.stateDir);
+        const agent = new AgentProcess(agentDir, this.stateDir, this.busDir);
         const watchdog = new Watchdog(agent);
 
         // Watchdog preia controlul la crash — repornește cu backoff

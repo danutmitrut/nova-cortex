@@ -17,6 +17,8 @@ import { join } from 'path';
 import { platform } from 'os';
 import { TelegramPoller } from '../telegram/poller.ts';
 import { CronScheduler } from '../cron/scheduler.ts';
+import { BusInbox } from '../bus/inbox.ts';
+import { sendMessage } from '../bus/send.ts';
 
 export interface AgentConfig {
   name: string;
@@ -33,17 +35,20 @@ export class AgentProcess {
   private ptyProcess: ReturnType<typeof pty.spawn> | null = null;
   private poller: TelegramPoller | null = null;
   private cron: CronScheduler | null = null;
+  private busInbox: BusInbox | null = null;
   private config: AgentConfig;
   private envVars: Record<string, string>;
   private stateDir: string;
+  private busDir: string;
 
   private _status: AgentStatus = 'stopped';
   private _onExit: ((name: string, exitCode: number) => void) | null = null;
   private _intentionalStop = false; // previne watchdog-ul la oprire manuală
 
-  constructor(agentDir: string, stateDir: string) {
+  constructor(agentDir: string, stateDir: string, busDir: string) {
     this.agentDir = agentDir;
     this.stateDir = stateDir;
+    this.busDir = busDir;
     this.config = JSON.parse(readFileSync(join(agentDir, 'config.json'), 'utf-8'));
     this.name = this.config.name;
     this.envVars = this.loadEnv();
@@ -168,14 +173,32 @@ export class AgentProcess {
     }
 
     this.cron.start();
+
+    // ── Bus Inbox ────────────────────────────────────────────────
+    this.busInbox = new BusInbox(this.name, this.busDir, (message) => {
+      console.log(`[${this.name}] Mesaj bus de la "${message.from}": "${message.content.slice(0, 60)}"`);
+      // Injectăm mesajul în PTY formatat clar pentru agent
+      this.inject(
+        `[BUS] Mesaj de la agentul "${message.from}":\n${message.content}\n` +
+        (message.requiresAck ? `\n(Mesajul a fost confirmat automat. Procesează și răspunde dacă e necesar.)` : '')
+      );
+    });
+    this.busInbox.start();
   }
 
-  // ── Oprești serviciile (Telegram + Cron) ─────────────────────
+  // ── Oprești serviciile (Telegram + Cron + Bus) ───────────────
   private stopServices(): void {
     this.poller?.stop();
     this.poller = null;
     this.cron?.stop();
     this.cron = null;
+    this.busInbox?.stop();
+    this.busInbox = null;
+  }
+
+  // ── Trimite un mesaj bus către un alt agent ──────────────────
+  sendBusMessage(to: string, content: string, requiresAck = false) {
+    return sendMessage(this.busDir, this.name, to, content, requiresAck);
   }
 
   // ── Parsăm .env al agentului ─────────────────────────────────
