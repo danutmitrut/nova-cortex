@@ -49,8 +49,11 @@ export class AgentProcess {
   private _onExit: ((name: string, exitCode: number) => void) | null = null;
   private _intentionalStop = false;
   private memoryTimer: ReturnType<typeof setInterval> | null = null;
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private outputBuffer: string[] = [];
   private static readonly MAX_OUTPUT = 200;
+  private startTime: number | null = null;
+  private lastOutputAt: number | null = null;
 
   constructor(agentDir: string, stateDir: string, busDir: string, knowledgeDir = '') {
     this.agentDir = agentDir;
@@ -134,11 +137,13 @@ export class AgentProcess {
     });
 
     this._status = 'running';
+    this.startTime = Date.now();
     console.log(`[${this.name}] PTY pornit (PID: ${this.ptyProcess.pid})`);
 
     // Afișăm output-ul în consolă și îl capturăm în buffer
     this.ptyProcess.onData((data) => {
       process.stdout.write(`[${this.name}] ${data}`);
+      this.lastOutputAt = Date.now();
       // Strip ANSI escape codes pentru buffer curat
       const clean = data.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '').replace(/\x1b[()][A-B0-2]/g, '');
       for (const line of clean.split('\n')) {
@@ -149,6 +154,10 @@ export class AgentProcess {
         }
       }
     });
+
+    // Heartbeat la fiecare 60 secunde
+    this.heartbeatTimer = setInterval(() => this.writeHeartbeat(), 60_000);
+    setTimeout(() => this.writeHeartbeat(), 5000); // primul heartbeat dupa boot
 
     // Auto-acceptăm "trust this folder?"
     setTimeout(() => this.ptyProcess?.write('\r'), 5000);
@@ -203,6 +212,27 @@ export class AgentProcess {
     if (!this.isAlive()) return;
     console.log(`[${this.name}] Salvez memoria...`);
     this.inject(buildSavePrompt(this.name, this.stateDir));
+  }
+
+  // ── Scrie heartbeat.json in state/<agent>/ ───────────────────
+  private writeHeartbeat(): void {
+    try {
+      const agentStateDir = resolve(this.stateDir, this.name);
+      mkdirSync(agentStateDir, { recursive: true });
+      const uptimeSeconds = this.startTime ? Math.floor((Date.now() - this.startTime) / 1000) : 0;
+      const idleSeconds = this.lastOutputAt ? Math.floor((Date.now() - this.lastOutputAt) / 1000) : null;
+      const lastLine = this.outputBuffer[this.outputBuffer.length - 1] || '';
+      writeFileSync(join(agentStateDir, 'heartbeat.json'), JSON.stringify({
+        agent: this.name,
+        status: this._status,
+        alive: this.isAlive(),
+        uptimeSeconds,
+        idleSeconds,
+        lastActivity: this.lastOutputAt ? new Date(this.lastOutputAt).toISOString() : null,
+        lastLine: lastLine.slice(0, 120),
+        timestamp: new Date().toISOString(),
+      }, null, 2), 'utf-8');
+    } catch {}
   }
 
   // ── Genereaza raport de sesiune la inchidere ─────────────────
@@ -379,7 +409,7 @@ REPORT_EOF
     }
   }
 
-  // ── Oprești serviciile (Telegram + Cron + Bus + Memory) ──────
+  // ── Oprești serviciile (Telegram + Cron + Bus + Memory + Heartbeat)
   private stopServices(): void {
     this.poller?.stop();
     this.poller = null;
@@ -387,10 +417,8 @@ REPORT_EOF
     this.cron = null;
     this.busInbox?.stop();
     this.busInbox = null;
-    if (this.memoryTimer) {
-      clearInterval(this.memoryTimer);
-      this.memoryTimer = null;
-    }
+    if (this.memoryTimer) { clearInterval(this.memoryTimer); this.memoryTimer = null; }
+    if (this.heartbeatTimer) { clearInterval(this.heartbeatTimer); this.heartbeatTimer = null; }
   }
 
   // ── Construieste promptul pentru mesajele Telegram ───────────

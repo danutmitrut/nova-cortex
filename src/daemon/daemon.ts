@@ -12,13 +12,14 @@
 //           Nova Cortex Daemon este PM2-ul pentru agenți Claude.
 // ============================================================
 
-import { readdirSync, existsSync } from 'fs';
+import { readdirSync, existsSync, readFileSync, mkdirSync } from 'fs';
 import { join, resolve } from 'path';
 import { AgentProcess } from './agent-process.ts';
 import { IpcServer } from './ipc.ts';
 import { Watchdog } from './watchdog.ts';
 import { DashboardServer } from '../dashboard/server.ts';
 import { runSecurityScan, printSecurityReport } from '../security/scanner.ts';
+import { AgentRegistry } from './agent-registry.ts';
 
 export class Daemon {
   private agents: Map<string, AgentProcess> = new Map();
@@ -28,12 +29,14 @@ export class Daemon {
   private busDir: string;
   private knowledgeDir: string;
   private ipc: IpcServer;
+  private registry: AgentRegistry;
 
   constructor(agentsDir: string, stateDir: string, busDir: string, knowledgeDir = '') {
     this.agentsDir = resolve(agentsDir);
     this.stateDir = resolve(stateDir);
     this.busDir = resolve(busDir);
     this.knowledgeDir = knowledgeDir ? resolve(knowledgeDir) : '';
+    this.registry = new AgentRegistry(this.stateDir);
     this.ipc = new IpcServer(this);
   }
 
@@ -71,6 +74,12 @@ export class Daemon {
 
       if (!existsSync(configPath)) {
         console.log(`[daemon] Ignorat ${entry.name} — lipsește config.json`);
+        continue;
+      }
+
+      // Verifica daca agentul e dezactivat in registry
+      if (!this.registry.isEnabled(entry.name)) {
+        console.log(`[daemon] Ignorat ${entry.name} — dezactivat (nova enable ${entry.name} pentru a reactiva)`);
         continue;
       }
 
@@ -143,6 +152,60 @@ export class Daemon {
     if (!agent) return false;
     agent.stop();
     return true;
+  }
+
+  // ── Activeaza un agent (persistat in registry) ───────────────
+  enableAgent(name: string): boolean {
+    this.registry.enable(name);
+    // Daca agentul nu e incarcat, il incarcam si pornim
+    if (!this.agents.has(name)) {
+      const agentDir = join(this.agentsDir, name);
+      const configPath = join(agentDir, 'config.json');
+      if (!existsSync(configPath)) return false;
+      try {
+        const agent = new AgentProcess(agentDir, this.stateDir, this.busDir, this.knowledgeDir);
+        const watchdog = new Watchdog(agent);
+        agent.onExit((n, exitCode) => {
+          console.log(`[daemon] Agentul "${n}" s-a inchis (cod: ${exitCode})`);
+          watchdog.onAgentExit(exitCode);
+        });
+        this.agents.set(name, agent);
+        this.watchdogs.set(name, watchdog);
+        agent.start();
+        watchdog.scheduleStabilityCheck();
+        console.log(`[daemon] Agent "${name}" activat si pornit.`);
+      } catch (err) {
+        console.error(`[daemon] Eroare la activarea agentului ${name}:`, err);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // ── Dezactiveaza un agent (persistat in registry) ────────────
+  disableAgent(name: string): boolean {
+    this.registry.disable(name);
+    const agent = this.agents.get(name);
+    if (agent) {
+      this.watchdogs.get(name)?.stop();
+      agent.stop();
+      this.agents.delete(name);
+      this.watchdogs.delete(name);
+      console.log(`[daemon] Agent "${name}" dezactivat si oprit.`);
+    }
+    return true;
+  }
+
+  // ── Returneaza heartbeat-urile tuturor agentilor ─────────────
+  getHeartbeats(): object[] {
+    const heartbeats: object[] = [];
+    for (const name of this.agents.keys()) {
+      const hbPath = join(this.stateDir, name, 'heartbeat.json');
+      if (existsSync(hbPath)) {
+        try { heartbeats.push(JSON.parse(readFileSync(hbPath, 'utf-8'))); } catch {}
+      }
+    }
+    return heartbeats;
   }
 
   // ── Oprire ordonată la SIGINT / SIGTERM ──────────────────────

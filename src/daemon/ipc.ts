@@ -87,6 +87,17 @@ export class IpcServer {
         if (!cmd.agent) return { ok: false, error: 'Lipsește agent' };
         return { ok: this.daemon.startAgent(cmd.agent) };
 
+      case 'enable':
+        if (!cmd.agent) return { ok: false, error: 'Lipsește agent' };
+        return { ok: this.daemon.enableAgent(cmd.agent) };
+
+      case 'disable':
+        if (!cmd.agent) return { ok: false, error: 'Lipsește agent' };
+        return { ok: this.daemon.disableAgent(cmd.agent) };
+
+      case 'heartbeats':
+        return { ok: true, heartbeats: this.daemon.getHeartbeats() };
+
       default:
         return { ok: false, error: `Comandă necunoscută: ${cmd.command}` };
     }

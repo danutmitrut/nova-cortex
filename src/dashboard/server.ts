@@ -102,6 +102,7 @@ export class DashboardServer {
       if (url === '/api/bus')                  return this.sendJson(res, { messages: this.getRecentBusMessages() });
       if (url === '/api/logs')                 return this.sendJson(res, { lines: getRecentLogs() });
       if (url === '/api/agents')               return this.sendJson(res, { agents: this.daemon.getAgentNames() });
+      if (url === '/api/heartbeats')           return this.sendJson(res, { heartbeats: this.daemon.getHeartbeats() });
       if (url.startsWith('/api/output/')) {
         const name = url.slice('/api/output/'.length);
         return this.sendJson(res, { lines: this.daemon.getAgentOutput(name) });
@@ -123,9 +124,11 @@ export class DashboardServer {
 
         if (url === '/api/agent') {
           const { action, name } = data;
-          if (action === 'start') return this.sendJson(res, { ok: this.daemon.startAgent(name) });
-          if (action === 'stop')  return this.sendJson(res, { ok: this.daemon.stopAgent(name) });
-          return this.sendJson(res, { ok: false, error: 'action trebuie să fie start sau stop' }, 400);
+          if (action === 'start')   return this.sendJson(res, { ok: this.daemon.startAgent(name) });
+          if (action === 'stop')    return this.sendJson(res, { ok: this.daemon.stopAgent(name) });
+          if (action === 'enable')  return this.sendJson(res, { ok: this.daemon.enableAgent(name) });
+          if (action === 'disable') return this.sendJson(res, { ok: this.daemon.disableAgent(name) });
+          return this.sendJson(res, { ok: false, error: 'action trebuie să fie start/stop/enable/disable' }, 400);
         }
       } catch {
         return this.sendJson(res, { ok: false, error: 'JSON invalid' }, 400);

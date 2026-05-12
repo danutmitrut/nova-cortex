@@ -1,0 +1,42 @@
+{
+  "version": "1.0.0",
+  "updatedAt": "2026-05-12",
+  "agents": [
+    {
+      "name": "cto",
+      "description": "CTO tehnic — arhitectură, code review, debugging, decizii de stack",
+      "source": "templates/cto",
+      "tags": ["engineering", "architecture", "review"]
+    },
+    {
+      "name": "researcher",
+      "description": "Cercetător — analiză tendinte, rapoarte saptamanale, sinteze",
+      "source": "templates/researcher",
+      "tags": ["research", "analysis", "reports"]
+    },
+    {
+      "name": "writer",
+      "description": "Writer — draft-uri de continut, articole, postari social media",
+      "source": "templates/writer",
+      "tags": ["content", "writing", "social"]
+    },
+    {
+      "name": "monitor",
+      "description": "Monitor — health checks, alerte sistem, rapoarte VERDE/GALBEN/ROSU",
+      "source": "templates/monitor",
+      "tags": ["monitoring", "alerts", "health"]
+    }
+  ],
+  "skills": [
+    {
+      "name": "daily-briefing",
+      "description": "Genera un briefing zilnic cu prioritatile agentului",
+      "tags": ["productivity"]
+    },
+    {
+      "name": "web-research",
+      "description": "Cauta si sintetizeaza informatii de pe web",
+      "tags": ["research", "web"]
+    }
+  ]
+}

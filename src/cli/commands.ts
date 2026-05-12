@@ -179,6 +179,116 @@ export async function cmdDoctor(): Promise<void> {
 }
 
 // ── nova help ─────────────────────────────────────────────────
+// ── nova enable / nova disable ────────────────────────────────
+export async function cmdEnable(name: string): Promise<void> {
+  if (!name) { console.error('Utilizare: nova enable <agent>'); process.exit(1); }
+  try {
+    const r = await sendCommand({ command: 'enable', agent: name }) as { ok: boolean; error?: string };
+    if (r.ok) console.log(`Agent "${name}" activat.`);
+    else console.error(`Eroare: ${r.error || 'necunoscuta'}`);
+  } catch {
+    // Daemon offline — modifica direct registry-ul
+    const { AgentRegistry } = await import('../daemon/agent-registry.ts');
+    const reg = new AgentRegistry(resolve('state'));
+    reg.enable(name);
+    console.log(`Agent "${name}" activat in registry. Reporneste daemonul.`);
+  }
+}
+
+export async function cmdDisable(name: string): Promise<void> {
+  if (!name) { console.error('Utilizare: nova disable <agent>'); process.exit(1); }
+  try {
+    const r = await sendCommand({ command: 'disable', agent: name }) as { ok: boolean; error?: string };
+    if (r.ok) console.log(`Agent "${name}" dezactivat.`);
+    else console.error(`Eroare: ${r.error || 'necunoscuta'}`);
+  } catch {
+    const { AgentRegistry } = await import('../daemon/agent-registry.ts');
+    const reg = new AgentRegistry(resolve('state'));
+    reg.disable(name);
+    console.log(`Agent "${name}" dezactivat in registry. Reporneste daemonul.`);
+  }
+}
+
+// ── nova heartbeats ───────────────────────────────────────────
+export async function cmdHeartbeats(): Promise<void> {
+  try {
+    const r = await sendCommand({ command: 'heartbeats' }) as { ok: boolean; heartbeats: any[] };
+    if (!r.heartbeats?.length) { console.log('Niciun heartbeat disponibil.'); return; }
+    console.log('\nHeartbeats agenți:\n');
+    console.log('  AGENT          STATUS     UPTIME     IDLE LAST');
+    console.log('  ─────────────────────────────────────────────────────────');
+    for (const h of r.heartbeats) {
+      const uptime = h.uptimeSeconds ? `${Math.floor(h.uptimeSeconds / 60)}m` : '-';
+      const idle = h.idleSeconds != null ? `${Math.floor(h.idleSeconds / 60)}m` : '-';
+      const last = (h.lastLine || '').slice(0, 35);
+      console.log(`  ${h.agent.padEnd(14)} ${(h.status || '').padEnd(10)} ${uptime.padEnd(10)} ${idle.padEnd(5)} ${last}`);
+    }
+    console.log('');
+  } catch {
+    console.error('Daemonul nu ruleaza.');
+  }
+}
+
+// ── nova community ────────────────────────────────────────────
+export function cmdCommunity(): void {
+  const catalogPath = join(resolve(''), 'community', 'catalog.json');
+  if (!existsSync(catalogPath)) {
+    console.log('catalog.json nu exista in community/. Ruleaza nova list-templates pentru template-uri locale.');
+    return;
+  }
+  try {
+    const catalog = JSON.parse(readFileSync(catalogPath, 'utf-8'));
+    const agents: any[] = catalog.agents || [];
+    const skills: any[] = catalog.skills || [];
+
+    if (agents.length) {
+      console.log('\nAgenți community:\n');
+      for (const a of agents) {
+        console.log(`  ${a.name.padEnd(15)} ${a.description || ''}`);
+        if (a.source) console.log(`  ${''.padEnd(15)} sursa: ${a.source}`);
+      }
+    }
+    if (skills.length) {
+      console.log('\nSkills community:\n');
+      for (const s of skills) {
+        console.log(`  ${s.name.padEnd(15)} ${s.description || ''}`);
+      }
+    }
+    if (!agents.length && !skills.length) console.log('Catalogul e gol.');
+    console.log('\nImporta un agent: nova import <name>\n');
+  } catch {
+    console.error('Eroare la citirea catalog.json.');
+  }
+}
+
+// ── nova import <name> ────────────────────────────────────────
+export function cmdImport(name: string): void {
+  if (!name) { console.error('Utilizare: nova import <name>'); process.exit(1); }
+
+  // Cauta in templates locale
+  const templateDir = join(resolve(''), 'templates', name);
+  if (existsSync(templateDir)) {
+    cmdAddAgent(name, name);
+    return;
+  }
+
+  // Cauta in community/agents/
+  const communityAgentDir = join(resolve(''), 'community', 'agents', name);
+  if (existsSync(communityAgentDir)) {
+    const agentDir = join(resolve(''), 'agents', name);
+    if (existsSync(agentDir)) {
+      console.error(`Agentul "${name}" exista deja in agents/.`);
+      process.exit(1);
+    }
+    cpSync(communityAgentDir, agentDir, { recursive: true });
+    console.log(`Agent "${name}" importat din community.`);
+    return;
+  }
+
+  console.error(`"${name}" negasit in templates/ sau community/agents/. Ruleaza nova list-templates sau nova community.`);
+  process.exit(1);
+}
+
 // ── nova list-templates ───────────────────────────────────────
 export function cmdListTemplates(): void {
   const templatesDir = join(resolve(''), 'templates');
@@ -261,19 +371,31 @@ COMENZI:
   nova status                         Listeaza toti agentii si statusul
   nova start <agent>                  Porneste un agent
   nova stop <agent>                   Opreste un agent
+  nova enable <agent>                 Activeaza un agent (persistent)
+  nova disable <agent>                Dezactiveaza un agent (persistent)
+  nova heartbeats                     Afiseaza heartbeat-urile tuturor agentilor
   nova bus <agent> <msg>              Trimite un mesaj prin bus
   nova doctor                         Diagnostic complet al sistemului
   nova add-agent <name>               Creeaza un agent nou (gol)
   nova add-agent <name> --template T  Creeaza din template (cto/researcher/writer/monitor)
   nova list-templates                 Listeaza templatele disponibile
+  nova community                      Afiseaza catalogul de agenti community
+  nova import <name>                  Importa un agent din templates sau community
+  nova tunnel start                   Porneste tunel cloudflared (acces remote)
+  nova tunnel stop                    Opreste tunelul
+  nova tunnel status                  Statusul tunelului + URL public
+  nova tunnel url                     Afiseaza URL-ul public curent
   nova service install                Instaleaza serviciu launchd (macOS)
   nova service uninstall              Dezinstaleaza serviciul
   nova service status                 Statusul serviciului
 
 EXEMPLE:
   nova status
+  nova enable researcher
+  nova heartbeats
   nova add-agent myagent --template researcher
-  nova list-templates
+  nova import cto
+  nova tunnel start
   nova bus orchestrator "Analizeaza tendintele AI din 2025"
 `);
 }
