@@ -16,6 +16,7 @@ import { execSync, spawnSync } from 'child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { validateTelegramToken, sendTelegramMessage } from '../telegram/poller.ts';
+import { cmdServiceInstall, cmdServiceStatus } from '../cli/service.ts';
 
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 
@@ -85,7 +86,7 @@ ${C.dim}   Wizard de configurare${C.reset}
 
 // ── Pasul 2: Verificare prerequisite ─────────────────────────
 async function stepPrerequisites(): Promise<boolean> {
-  header('Pasul 1 / 4 — Verificare prerequisite');
+  header('Pasul 1 / 5 — Verificare prerequisite');
   line();
 
   let allOk = true;
@@ -121,7 +122,7 @@ async function stepPrerequisites(): Promise<boolean> {
 
 // ── Pasul 3: Creare agent ─────────────────────────────────────
 async function stepCreateAgent(): Promise<{ name: string; agentDir: string }> {
-  header('Pasul 2 / 4 — Crează primul tău agent');
+  header('Pasul 2 / 5 — Crează primul tău agent');
   line();
 
   print('  Agentul tău AI va fi un proces Claude Code autonom,');
@@ -181,7 +182,7 @@ Confirmă: "${safeName} activ."
 
 // ── Pasul 4: Configurare Telegram ─────────────────────────────
 async function stepTelegram(agentDir: string, agentName: string): Promise<void> {
-  header('Pasul 3 / 4 — Telegram (opțional)');
+  header('Pasul 3 / 5 — Telegram (opțional)');
   line();
   print('  Poți controla agentul prin Telegram — îi trimiți mesaje și el răspunde.');
   print('  Dacă sari peste acest pas, agentul va funcționa fără Telegram.\n');
@@ -245,26 +246,52 @@ async function stepTelegram(agentDir: string, agentName: string): Promise<void> 
   ok('.env salvat.');
 }
 
+// ── Pasul 4: Instalare serviciu launchd ───────────────────────
+async function stepLaunchd(): Promise<void> {
+  header('Pasul 4 / 5 — Pornire automată la login (recomandat)');
+  line();
+  print('  Nova Cortex poate porni automat când deschizi Mac-ul,');
+  print('  fără să dai niciodată "npm run dev" manual.\n');
+
+  const wants = await ask('  Instalezi serviciul de fundal? (da/nu) [da]: ');
+
+  if (wants.toLowerCase().startsWith('n')) {
+    warn('Sărit. Pornești manual cu "npm run dev" de fiecare dată.');
+    print(`  ${C.dim}Instalezi mai târziu cu: npm run nova -- service install${C.reset}`);
+    return;
+  }
+
+  print('\n  Se instalează serviciul launchd...');
+  try {
+    await cmdServiceInstall();
+  } catch (e: any) {
+    err(`Eroare la instalare: ${e.message}`);
+    warn('Poți instala manual mai târziu: npm run nova -- service install');
+  }
+}
+
 // ── Pasul 5: Instrucțiuni finale ──────────────────────────────
 async function stepFinish(agentName: string): Promise<void> {
-  header('Pasul 4 / 4 — Gata!');
+  header('Pasul 5 / 5 — Gata!');
   line();
 
   ok(`Agentul "${agentName}" este configurat.`);
+  ok('Nova Cortex este instalat și pornit.');
   print('');
-  print(`  ${C.bold}Pornește Nova Cortex:${C.reset}`);
-  print(`    npm run dev`);
-  print('');
-  print(`  ${C.bold}Controlează agenții din alt terminal:${C.reset}`);
-  print(`    npm run nova -- status`);
-  print(`    npm run nova -- stop ${agentName}`);
-  print(`    npm run nova -- bus ${agentName} "Salut, prezintă-te!"`);
-  print('');
-  print(`  ${C.bold}Dashboard web (când daemonul rulează):${C.reset}`);
+  print(`  ${C.bold}Dashboard (deschide în browser):${C.reset}`);
   print(`    http://localhost:4242`);
   print('');
+  print(`  ${C.bold}Comenzi utile:${C.reset}`);
+  print(`    npm run nova -- status`);
+  print(`    npm run nova -- doctor`);
+  print(`    npm run nova -- bus ${agentName} "Salut, prezintă-te!"`);
+  print('');
+  print(`  ${C.bold}Dacă ai instalat serviciul:${C.reset}`);
+  print(`    Daemonul pornește automat la fiecare login.`);
+  print(`    Nu mai dai niciodata "npm run dev".`);
+  print('');
   line();
-  print(`  ${C.dim}Documentație: README.md | GitHub: github.com/danutmitrut/nova-cortex${C.reset}`);
+  print(`  ${C.dim}GitHub: github.com/danutmitrut/nova-cortex${C.reset}`);
   print('');
 }
 
@@ -280,6 +307,7 @@ async function main(): Promise<void> {
 
   const { name, agentDir } = await stepCreateAgent();
   await stepTelegram(agentDir, name);
+  await stepLaunchd();
   await stepFinish(name);
 
   rl.close();
