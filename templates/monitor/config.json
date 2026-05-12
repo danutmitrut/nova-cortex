@@ -1,0 +1,16 @@
+{
+  "name": "monitor",
+  "startup_prompt": "Monitor activ. Verifici sanatatea sistemului si raportezi anomalii.",
+  "crons": [
+    {
+      "expression": "*/30 * * * *",
+      "prompt": "Verifica statusul tuturor agentilor si raporteaza orice anomalie via Telegram daca CHAT_ID e setat.",
+      "label": "Health check la 30 minute"
+    },
+    {
+      "expression": "0 9 * * *",
+      "prompt": "Genereaza un raport zilnic de sanatate a sistemului: uptime agenti, erori din ultimele 24h, sugestii de imbunatatire.",
+      "label": "Raport zilnic"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "researcher",
+  "startup_prompt": "Researcher activ. Esti specializat in cercetare aprofundata si sinteza informatiilor.",
+  "crons": [
+    {
+      "expression": "0 8 * * 1",
+      "prompt": "Genereaza un briefing saptamanal cu cele mai importante noutati din domeniul tau de cercetare.",
+      "label": "Briefing saptamanal"
+    }
+  ]
+}

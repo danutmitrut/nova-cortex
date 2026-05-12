@@ -7,7 +7,7 @@
 // Comenzi: status | start | stop | bus
 // ============================================================
 
-import { cmdStatus, cmdStart, cmdStop, cmdBus, cmdDoctor, cmdHelp } from './cli/commands.ts';
+import { cmdStatus, cmdStart, cmdStop, cmdBus, cmdDoctor, cmdHelp, cmdAddAgent, cmdListTemplates } from './cli/commands.ts';
 import { cmdServiceInstall, cmdServiceUninstall, cmdServiceStatus } from './cli/service.ts';
 
 const [, , command, ...args] = process.argv;
@@ -28,6 +28,12 @@ async function main() {
       break;
     case 'doctor':
       await cmdDoctor();
+      break;
+    case 'add-agent':
+      cmdAddAgent(args[0], args.includes('--template') ? args[args.indexOf('--template') + 1] : undefined);
+      break;
+    case 'list-templates':
+      cmdListTemplates();
       break;
     case 'service':
       switch (args[0]) {
