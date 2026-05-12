@@ -79,18 +79,27 @@ export class AgentProcess {
     this._status = 'starting';
     console.log(`[${this.name}] Pornesc...`);
 
-    const identityPath = join(this.agentDir, 'IDENTITY.md');
-    const identityContent = existsSync(identityPath)
-      ? readFileSync(identityPath, 'utf-8')
-      : '';
+    // Modular brain: incarca modulele de context pe rand (nu tot odata)
+    const loadModule = (filename: string) => {
+      const p = join(this.agentDir, filename);
+      return existsSync(p) ? readFileSync(p, 'utf-8') : '';
+    };
+
+    const identityContent = loadModule('IDENTITY.md');
+    const goalsContent = loadModule('GOALS.md');
+    const guardrailsContent = loadModule('GUARDRAILS.md');
 
     const memory = loadMemory(this.name, this.stateDir);
     if (memory) {
       console.log(`[${this.name}] Memorie găsită — injectată în system prompt.`);
     }
+    if (goalsContent) console.log(`[${this.name}] GOALS.md incarcat.`);
+    if (guardrailsContent) console.log(`[${this.name}] GUARDRAILS.md incarcat.`);
 
     const systemPrompt = [
       identityContent,
+      goalsContent,
+      guardrailsContent,
       memory ? formatMemoryForPrompt(memory) : '',
     ].filter(Boolean).join('\n\n---\n\n');
 
@@ -279,9 +288,8 @@ export class AgentProcess {
     if (BOT_TOKEN && CHAT_ID) {
       this.poller = new TelegramPoller(BOT_TOKEN, (text, chatId) => {
         console.log(`[${this.name}] Mesaj Telegram: "${text}"`);
-        this.inject(
-          `Mesaj nou pe Telegram de la chat ${chatId}: "${text}"\nRăspunde via curl cu BOT_TOKEN și CHAT_ID din env.`
-        );
+        const prompt = this.buildTelegramPrompt(text, chatId);
+        this.inject(prompt);
       }, agentStateDir);
       this.poller.start();
 
@@ -346,6 +354,58 @@ export class AgentProcess {
       clearInterval(this.memoryTimer);
       this.memoryTimer = null;
     }
+  }
+
+  // ── Construieste promptul pentru mesajele Telegram ───────────
+  private buildTelegramPrompt(text: string, chatId: number): string {
+    const { BOT_TOKEN, CHAT_ID } = this.envVars;
+    const replyCmd = BOT_TOKEN && CHAT_ID
+      ? `curl -s -X POST https://api.telegram.org/bot${BOT_TOKEN}/sendMessage -d chat_id=${chatId} -d text="<mesajul tau>"`
+      : '';
+
+    // Detectam comenzi skill: /brief, /plan, /status, /memory, /goals
+    if (text.startsWith('/')) {
+      const [cmd, ...args] = text.slice(1).split(' ');
+      const arg = args.join(' ').trim();
+
+      switch (cmd.toLowerCase()) {
+        case 'brief':
+          return `[SKILL /brief] Genereaza un briefing de status de maxim 20 randuri:
+- Ce lucrezi acum
+- Ce ai terminat recent
+- Ce urmeaza
+- Eventuale blocaje
+Trimite pe Telegram via ${replyCmd}`;
+
+        case 'plan':
+          return `[SKILL /plan] ${arg ? `Task: "${arg}"` : 'Analizeaza task-ul curent'}.
+Descompune in pasi concisi cu ordine si dependente. Trimite planul pe Telegram via ${replyCmd}`;
+
+        case 'status':
+          return `[SKILL /status] Trimite un status scurt (3-5 randuri) pe Telegram despre ce faci acum: ${replyCmd}`;
+
+        case 'memory':
+          return `[SKILL /memory] Rezuma ce stii din sesiunile anterioare (MEMORY.md). Trimite pe Telegram via ${replyCmd}`;
+
+        case 'goals':
+          return `[SKILL /goals] Citeste GOALS.md (daca exista) si trimite goalurile active pe Telegram via ${replyCmd}`;
+
+        case 'help':
+          return `[SKILL /help] Trimite pe Telegram lista de comenzi disponibile:
+/brief - status complet
+/plan [task] - descompune un task
+/status - status scurt
+/memory - ce stii din sesiunile anterioare
+/goals - goalurile active
+Foloseste: ${replyCmd}`;
+
+        default:
+          return `Comanda necunoscuta: /${cmd}. Trimite pe Telegram lista de comenzi via /help. ${replyCmd}`;
+      }
+    }
+
+    // Mesaj normal
+    return `Mesaj nou pe Telegram de la chat ${chatId}: "${text}"\nRaspunde via curl: ${replyCmd}`;
   }
 
   // ── Trimite un mesaj bus către un alt agent ──────────────────

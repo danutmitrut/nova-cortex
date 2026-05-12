@@ -176,6 +176,37 @@ Faci parte din sistemul Nova Cortex.
 Confirmă: "${safeName} activ."
 `);
 
+  writeFileSync(join(agentDir, 'GOALS.md'), `# Goaluri active — ${safeName}
+
+<!-- Adaugă aici obiectivele agentului. Exemple: -->
+
+## Obiectiv principal
+${role || 'Asistent personal AI pentru sarcinile zilnice.'}
+
+## Taskuri in curs
+- [ ] (niciun task activ)
+
+## Completate recent
+- (nimic inca)
+`);
+
+  writeFileSync(join(agentDir, 'GUARDRAILS.md'), `# Guardrails — ${safeName}
+
+## Nu face niciodata
+- Nu sterge fisiere fara confirmare explicita
+- Nu trimite mesaje externe (email, social media) fara aprobare
+- Nu executa comenzi distructive (rm -rf, DROP TABLE, etc.)
+- Nu dezvalui chei API sau credentiale din .env
+
+## Intotdeauna
+- Confirma inainte de actiuni ireversibile
+- Raporteaza progresul la fiecare task major
+- Cere clarificari daca task-ul e ambiguu
+
+## In caz de dubiu
+Trimite un mesaj pe Telegram si asteapta confirmare.
+`);
+
   ok(`Agent "${safeName}" creat în agents/${safeName}/`);
   return { name: safeName, agentDir };
 }
