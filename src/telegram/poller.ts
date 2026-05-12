@@ -92,3 +92,38 @@ export class TelegramPoller {
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+// ── Trimite un mesaj pe Telegram ─────────────────────────────
+export async function sendTelegramMessage(
+  token: string,
+  chatId: string | number,
+  text: string
+): Promise<boolean> {
+  try {
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// ── Validează un token și returnează numele botului ──────────
+export async function validateTelegramToken(
+  token: string
+): Promise<{ ok: boolean; username?: string; firstName?: string }> {
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+    const data = await res.json() as { ok: boolean; result?: { username: string; first_name: string } };
+    if (data.ok && data.result) {
+      return { ok: true, username: data.result.username, firstName: data.result.first_name };
+    }
+    return { ok: false };
+  } catch {
+    return { ok: false };
+  }
+}

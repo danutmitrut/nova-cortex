@@ -15,6 +15,7 @@ import { createInterface } from 'readline';
 import { execSync, spawnSync } from 'child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
+import { validateTelegramToken, sendTelegramMessage } from '../telegram/poller.ts';
 
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 
@@ -179,37 +180,69 @@ Confirmă: "${safeName} activ."
 }
 
 // ── Pasul 4: Configurare Telegram ─────────────────────────────
-async function stepTelegram(agentDir: string): Promise<void> {
+async function stepTelegram(agentDir: string, agentName: string): Promise<void> {
   header('Pasul 3 / 4 — Telegram (opțional)');
   line();
   print('  Poți controla agentul prin Telegram — îi trimiți mesaje și el răspunde.');
   print('  Dacă sari peste acest pas, agentul va funcționa fără Telegram.\n');
 
   const wantsTelegram = await ask('  Vrei să configurezi Telegram? (da/nu) [nu]: ');
-
   if (!wantsTelegram.toLowerCase().startsWith('d')) {
-    warn('Telegram sărit. Poți configura mai târziu în agents/<nume>/.env');
+    warn('Telegram sărit. Poți configura mai târziu în agents/<agent>/.env');
     return;
   }
 
+  // ── Token ────────────────────────────────────────────────────
   print('\n  1. Deschide Telegram și caută @BotFather');
   print('  2. Trimite /newbot și urmează instrucțiunile');
   print('  3. Copiază token-ul primit (format: 123456789:ABC-DEF...)\n');
 
-  const token = await ask('  BOT_TOKEN: ');
+  let token = '';
+  let botUsername = '';
 
-  print('\n  4. Deschide botul tău în Telegram și trimite /start');
-  print('  5. Accesează: https://api.telegram.org/bot<TOKEN>/getUpdates');
+  while (true) {
+    token = await ask('  BOT_TOKEN: ');
+    if (!token) { warn('Token gol. Încearcă din nou.'); continue; }
+
+    print('  Se verifică token-ul...');
+    const validation = await validateTelegramToken(token);
+
+    if (validation.ok) {
+      botUsername = validation.username ?? '';
+      ok(`Token valid — bot: @${botUsername} (${validation.firstName})`);
+      break;
+    } else {
+      err('Token invalid. Verifică că ai copiat corect din BotFather și încearcă din nou.');
+    }
+  }
+
+  // ── Chat ID ──────────────────────────────────────────────────
+  print(`\n  4. Deschide @${botUsername} în Telegram și trimite /start`);
+  print(`  5. Accesează în browser:`);
+  print(`     https://api.telegram.org/bot${token}/getUpdates`);
   print('  6. Găsește "chat":{"id":<număr>} în răspuns\n');
 
-  const chatId = await ask('  CHAT_ID: ');
+  let chatId = '';
 
-  if (token && chatId) {
-    writeFileSync(join(agentDir, '.env'), `BOT_TOKEN=${token}\nCHAT_ID=${chatId}\n`);
-    ok('Fișier .env salvat în agents/<agent>/.env');
-  } else {
-    warn('Token sau Chat ID lipsa — .env nu a fost creat.');
+  while (true) {
+    chatId = await ask('  CHAT_ID: ');
+    if (!chatId) { warn('Chat ID gol. Încearcă din nou.'); continue; }
+
+    print('  Se trimite mesaj de test...');
+    const sent = await sendTelegramMessage(token, chatId,
+      `Nova Cortex — configurare reusita!\nAgentul tau "${agentName}" este pregatit. La "npm run dev" va porni si va astepta sarcini.`
+    );
+
+    if (sent) {
+      ok('Mesaj de confirmare trimis pe Telegram. Verifică telefonul!');
+      break;
+    } else {
+      err('Mesajul nu a ajuns. Chat ID posibil incorect — trimite /start botului și verifică din nou getUpdates.');
+    }
   }
+
+  writeFileSync(join(agentDir, '.env'), `BOT_TOKEN=${token}\nCHAT_ID=${chatId}\n`);
+  ok('.env salvat.');
 }
 
 // ── Pasul 5: Instrucțiuni finale ──────────────────────────────
@@ -246,7 +279,7 @@ async function main(): Promise<void> {
   }
 
   const { name, agentDir } = await stepCreateAgent();
-  await stepTelegram(agentDir);
+  await stepTelegram(agentDir, name);
   await stepFinish(name);
 
   rl.close();

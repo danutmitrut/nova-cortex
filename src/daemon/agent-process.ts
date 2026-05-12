@@ -20,6 +20,7 @@ import { CronScheduler } from '../cron/scheduler.ts';
 import { BusInbox } from '../bus/inbox.ts';
 import { sendMessage } from '../bus/send.ts';
 import { ragSearch, formatRagContext } from '../rag/search.ts';
+import { sendTelegramMessage } from '../telegram/poller.ts';
 
 export interface AgentConfig {
   name: string;
@@ -162,6 +163,13 @@ export class AgentProcess {
         );
       });
       this.poller.start();
+
+      // Mesaj de bun venit la fiecare boot al agentului
+      sendTelegramMessage(BOT_TOKEN, CHAT_ID,
+        `Nova Cortex — agentul "${this.name}" este activ si asteapta sarcini.`
+      ).then(sent => {
+        if (sent) console.log(`[${this.name}] Mesaj de bun venit trimis pe Telegram.`);
+      });
     }
 
     this.cron = new CronScheduler(this.name, this.stateDir, (job) => {
