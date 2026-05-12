@@ -17,6 +17,7 @@ import { join, resolve } from 'path';
 import { AgentProcess } from './agent-process.ts';
 import { IpcServer } from './ipc.ts';
 import { Watchdog } from './watchdog.ts';
+import { DashboardServer } from '../dashboard/server.ts';
 
 export class Daemon {
   private agents: Map<string, AgentProcess> = new Map();
@@ -41,6 +42,7 @@ export class Daemon {
     this.discoverAgents();
     this.startAllAgents();
     this.ipc.start();
+    new DashboardServer(this, this.busDir).start();
     this.setupShutdown();
 
     console.log(`[daemon] ${this.agents.size} agent(i) activ(i).`);
