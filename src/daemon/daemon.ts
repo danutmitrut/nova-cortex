@@ -48,7 +48,7 @@ export class Daemon {
     this.discoverAgents();
     this.startAllAgents();
     this.ipc.start();
-    new DashboardServer(this, this.busDir).start();
+    new DashboardServer(this, this.busDir, this.stateDir).start();
     this.setupShutdown();
 
     console.log(`[daemon] ${this.agents.size} agent(i) activ(i).`);
