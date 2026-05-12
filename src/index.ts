@@ -7,5 +7,5 @@
 
 import { Daemon } from './daemon/daemon.ts';
 
-const daemon = new Daemon('./agents', './state', './bus');
+const daemon = new Daemon('./agents', './state', './bus', './knowledge');
 daemon.start();

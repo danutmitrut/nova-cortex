@@ -25,12 +25,14 @@ export class Daemon {
   private agentsDir: string;
   private stateDir: string;
   private busDir: string;
+  private knowledgeDir: string;
   private ipc: IpcServer;
 
-  constructor(agentsDir: string, stateDir: string, busDir: string) {
+  constructor(agentsDir: string, stateDir: string, busDir: string, knowledgeDir = '') {
     this.agentsDir = resolve(agentsDir);
     this.stateDir = resolve(stateDir);
     this.busDir = resolve(busDir);
+    this.knowledgeDir = knowledgeDir ? resolve(knowledgeDir) : '';
     this.ipc = new IpcServer(this);
   }
 
@@ -69,7 +71,7 @@ export class Daemon {
       }
 
       try {
-        const agent = new AgentProcess(agentDir, this.stateDir, this.busDir);
+        const agent = new AgentProcess(agentDir, this.stateDir, this.busDir, this.knowledgeDir);
         const watchdog = new Watchdog(agent);
 
         // Watchdog preia controlul la crash — repornește cu backoff

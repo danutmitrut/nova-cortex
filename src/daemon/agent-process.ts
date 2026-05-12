@@ -19,6 +19,7 @@ import { TelegramPoller } from '../telegram/poller.ts';
 import { CronScheduler } from '../cron/scheduler.ts';
 import { BusInbox } from '../bus/inbox.ts';
 import { sendMessage } from '../bus/send.ts';
+import { ragSearch, formatRagContext } from '../rag/search.ts';
 
 export interface AgentConfig {
   name: string;
@@ -40,15 +41,17 @@ export class AgentProcess {
   private envVars: Record<string, string>;
   private stateDir: string;
   private busDir: string;
+  private knowledgeDir: string;
 
   private _status: AgentStatus = 'stopped';
   private _onExit: ((name: string, exitCode: number) => void) | null = null;
   private _intentionalStop = false; // previne watchdog-ul la oprire manuală
 
-  constructor(agentDir: string, stateDir: string, busDir: string) {
+  constructor(agentDir: string, stateDir: string, busDir: string, knowledgeDir = '') {
     this.agentDir = agentDir;
     this.stateDir = stateDir;
     this.busDir = busDir;
+    this.knowledgeDir = knowledgeDir;
     this.config = JSON.parse(readFileSync(join(agentDir, 'config.json'), 'utf-8'));
     this.name = this.config.name;
     this.envVars = this.loadEnv();
@@ -184,6 +187,16 @@ export class AgentProcess {
       );
     });
     this.busInbox.start();
+
+    // ── RAG: injectăm context relevant din knowledge base ────────
+    if (this.knowledgeDir) {
+      const chunks = ragSearch(this.config.startup_prompt, this.knowledgeDir, 3);
+      if (chunks.length > 0) {
+        const context = formatRagContext(chunks);
+        console.log(`[${this.name}] RAG: ${chunks.length} chunk(uri) relevante găsite.`);
+        this.inject(`[CONTEXT AUTOMAT]\n${context}\n\nUtilizează aceste informații dacă sunt relevante pentru sarcinile tale.`);
+      }
+    }
   }
 
   // ── Oprești serviciile (Telegram + Cron + Bus) ───────────────
