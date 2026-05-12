@@ -1,19 +1,19 @@
 // ============================================================
 // Dashboard Server — interfață web la localhost:4242
 // ============================================================
-// Server HTTP pur (fără Express), două endpoint-uri:
-//   GET /         → pagina HTML a dashboard-ului
-//   GET /api/status → JSON cu statusul agenților
-//   GET /api/bus   → JSON cu ultimele mesaje din bus
-//
-// De ce nu Express?
-//   Dashboard-ul e intern, fără rețea publică, fără auth.
-//   Node.js http nativ are tot ce ne trebuie, zero dependențe.
+// GET  /             → HTML dashboard
+// GET  /api/status   → JSON status agenți
+// GET  /api/bus      → JSON mesaje recente din bus
+// GET  /api/logs     → JSON ultimele 200 linii log daemon
+// POST /api/bus      → trimite mesaj bus { to, content }
+// POST /api/agent    → start/stop agent { action, name }
 // ============================================================
 
 import { createServer, type IncomingMessage, type ServerResponse } from 'http';
-import { readdirSync, readFileSync, existsSync } from 'fs';
+import { readdirSync, readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { randomUUID } from 'crypto';
+import { getRecentLogs } from '../daemon/logger.ts';
 import type { Daemon } from '../daemon/daemon.ts';
 
 const PORT = 4242;
@@ -34,71 +34,101 @@ export class DashboardServer {
     });
   }
 
-  private handle(req: IncomingMessage, res: ServerResponse): void {
+  private async handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = req.url ?? '/';
+    const method = req.method ?? 'GET';
 
-    if (url === '/api/status') {
-      this.sendJson(res, { agents: this.daemon.getStatus() });
-    } else if (url === '/api/bus') {
-      this.sendJson(res, { messages: this.getRecentBusMessages() });
-    } else {
-      this.sendHtml(res);
+    // ── CORS pentru development ──────────────────────────────
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    if (method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+
+    if (method === 'GET') {
+      if (url === '/api/status')  return this.sendJson(res, { agents: this.daemon.getStatus() });
+      if (url === '/api/bus')     return this.sendJson(res, { messages: this.getRecentBusMessages() });
+      if (url === '/api/logs')    return this.sendJson(res, { lines: getRecentLogs() });
+      if (url === '/api/agents')  return this.sendJson(res, { agents: this.daemon.getAgentNames() });
+      return this.sendHtml(res);
     }
+
+    if (method === 'POST') {
+      const body = await this.readBody(req);
+      try {
+        const data = JSON.parse(body);
+
+        if (url === '/api/bus') {
+          const { to, content } = data;
+          if (!to || !content) return this.sendJson(res, { ok: false, error: 'Lipsesc câmpuri: to, content' }, 400);
+          this.writeBusMessage(to, content);
+          return this.sendJson(res, { ok: true });
+        }
+
+        if (url === '/api/agent') {
+          const { action, name } = data;
+          if (action === 'start') return this.sendJson(res, { ok: this.daemon.startAgent(name) });
+          if (action === 'stop')  return this.sendJson(res, { ok: this.daemon.stopAgent(name) });
+          return this.sendJson(res, { ok: false, error: 'action trebuie să fie start sau stop' }, 400);
+        }
+      } catch {
+        return this.sendJson(res, { ok: false, error: 'JSON invalid' }, 400);
+      }
+    }
+
+    res.writeHead(404); res.end();
   }
 
-  private sendJson(res: ServerResponse, data: unknown): void {
-    const body = JSON.stringify(data);
-    res.writeHead(200, {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-    });
-    res.end(body);
+  private sendJson(res: ServerResponse, data: unknown, status = 200): void {
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
   }
 
   private sendHtml(res: ServerResponse): void {
     const htmlPath = new URL('./index.html', import.meta.url).pathname;
     const html = existsSync(htmlPath)
       ? readFileSync(htmlPath, 'utf8')
-      : '<h1>Nova Cortex Dashboard</h1><p>index.html lipsește</p>';
-
+      : '<h1>Nova Cortex</h1><p>index.html lipsește</p>';
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(html);
   }
 
-  // Citește ultimele 20 de mesaje procesate din bus/*/processed/
+  private readBody(req: IncomingMessage): Promise<string> {
+    return new Promise(resolve => {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', () => resolve(body));
+    });
+  }
+
+  private writeBusMessage(to: string, content: string): void {
+    const inboxDir = join(this.busDir, to, 'inbox');
+    mkdirSync(inboxDir, { recursive: true });
+    const id = randomUUID();
+    const ts = new Date().toISOString();
+    const filename = `${ts.replace(/[:.]/g, '-').slice(0, 19)}-${id}.json`;
+    writeFileSync(join(inboxDir, filename), JSON.stringify({
+      id, from: 'dashboard', to, content, timestamp: ts, requiresAck: false,
+    }, null, 2));
+  }
+
   private getRecentBusMessages(): object[] {
     const messages: object[] = [];
-
     if (!existsSync(this.busDir)) return messages;
 
     try {
       const agents = readdirSync(this.busDir, { withFileTypes: true })
-        .filter(e => e.isDirectory())
-        .map(e => e.name);
+        .filter(e => e.isDirectory()).map(e => e.name);
 
       for (const agent of agents) {
         const processedDir = join(this.busDir, agent, 'processed');
         if (!existsSync(processedDir)) continue;
-
-        const files = readdirSync(processedDir)
-          .filter(f => f.endsWith('.json'))
-          .sort()
-          .slice(-10); // ultimele 10 per agent
-
+        const files = readdirSync(processedDir).filter(f => f.endsWith('.json')).sort().slice(-10);
         for (const file of files) {
-          try {
-            const raw = readFileSync(join(processedDir, file), 'utf8');
-            messages.push(JSON.parse(raw));
-          } catch {
-            // fișier corupt — ignorat
-          }
+          try { messages.push(JSON.parse(readFileSync(join(processedDir, file), 'utf8'))); } catch {}
         }
       }
-    } catch {
-      // busDir inaccesibil — returnăm ce avem
-    }
+    } catch {}
 
-    // Sortăm după timestamp descrescător, limităm la 20 total
     return messages
       .sort((a: any, b: any) => (b.timestamp ?? '').localeCompare(a.timestamp ?? ''))
       .slice(0, 20);

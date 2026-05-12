@@ -4,7 +4,7 @@ dist/
 .env
 agents/**/.env
 agents/**/secrets.env
-logs/
+/logs/
 *.log
 /state/
 /bus/

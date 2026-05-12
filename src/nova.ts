@@ -7,7 +7,8 @@
 // Comenzi: status | start | stop | bus
 // ============================================================
 
-import { cmdStatus, cmdStart, cmdStop, cmdBus, cmdHelp } from './cli/commands.ts';
+import { cmdStatus, cmdStart, cmdStop, cmdBus, cmdDoctor, cmdHelp } from './cli/commands.ts';
+import { cmdServiceInstall, cmdServiceUninstall, cmdServiceStatus } from './cli/service.ts';
 
 const [, , command, ...args] = process.argv;
 
@@ -24,6 +25,17 @@ async function main() {
       break;
     case 'bus':
       await cmdBus(args[0], args.slice(1).join(' '));
+      break;
+    case 'doctor':
+      await cmdDoctor();
+      break;
+    case 'service':
+      switch (args[0]) {
+        case 'install':   await cmdServiceInstall(); break;
+        case 'uninstall': await cmdServiceUninstall(); break;
+        case 'status':    cmdServiceStatus(); break;
+        default: console.error('Utilizare: nova service install|uninstall|status'); process.exit(1);
+      }
       break;
     case 'help':
     case '--help':

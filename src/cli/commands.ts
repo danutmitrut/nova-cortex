@@ -8,9 +8,11 @@
 // ============================================================
 
 import { sendCommand } from './client.ts';
-import { writeFileSync, mkdirSync, existsSync } from 'fs';
+import { writeFileSync, mkdirSync, existsSync, readdirSync } from 'fs';
 import { join, resolve } from 'path';
 import { randomUUID } from 'crypto';
+import { spawnSync } from 'child_process';
+import { homedir, platform } from 'os';
 
 type AgentStatus = { name: string; status: string; alive: boolean };
 
@@ -105,21 +107,96 @@ export async function cmdBus(to: string, content: string): Promise<void> {
   console.log(`Mesaj trimis la "${to}" (id: ${id.slice(0, 8)}...)`);
 }
 
+// ── nova doctor ───────────────────────────────────────────────
+export async function cmdDoctor(): Promise<void> {
+  const ok  = (msg: string) => console.log(`  \x1b[32m✓\x1b[0m ${msg}`);
+  const err = (msg: string) => console.log(`  \x1b[31m✗\x1b[0m ${msg}`);
+  const warn= (msg: string) => console.log(`  \x1b[33m!\x1b[0m ${msg}`);
+
+  console.log('\nNova Cortex — Diagnostic\n');
+
+  // Node.js
+  const major = parseInt(process.version.slice(1));
+  major >= 20 ? ok(`Node.js ${process.version}`) : err(`Node.js ${process.version} — necesită v20+`);
+
+  // Claude CLI
+  const claudePath = spawnSync(platform() === 'win32' ? 'where' : 'which', ['claude'], {
+    stdio: 'pipe',
+    env: { ...process.env, PATH: `/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${process.env.PATH}` },
+  });
+  claudePath.status === 0
+    ? ok(`Claude CLI: ${claudePath.stdout.toString().trim()}`)
+    : err('Claude CLI neinstalat — npm install -g @anthropic-ai/claude-code');
+
+  // Daemon (IPC)
+  let daemonOk = false;
+  let agentList: AgentStatus[] = [];
+  try {
+    const r = await sendCommand({ command: 'status' }) as { agents: AgentStatus[] };
+    agentList = r.agents ?? [];
+    daemonOk = true;
+    ok(`Daemon: rulează (${agentList.length} agent/i)`);
+  } catch {
+    err('Daemon: oprit — rulează "npm run dev" sau "nova service install"');
+  }
+
+  // Agenți
+  if (daemonOk) {
+    for (const a of agentList) {
+      a.alive ? ok(`Agent "${a.name}": ${a.status}`) : warn(`Agent "${a.name}": ${a.status}`);
+    }
+  }
+
+  // Telegram per agent
+  const agentsDir = resolve('./agents');
+  if (existsSync(agentsDir)) {
+    const dirs = readdirSync(agentsDir, { withFileTypes: true }).filter(e => e.isDirectory());
+    for (const d of dirs) {
+      const envPath = join(agentsDir, d.name, '.env');
+      existsSync(envPath)
+        ? ok(`Telegram "${d.name}": .env configurat`)
+        : warn(`Telegram "${d.name}": .env absent`);
+    }
+  }
+
+  // Dashboard
+  try {
+    const r = await fetch('http://localhost:4242/api/status', { signal: AbortSignal.timeout(1000) });
+    r.ok ? ok('Dashboard: http://localhost:4242') : warn('Dashboard: răspuns neașteptat');
+  } catch {
+    warn('Dashboard: offline (pornește daemonul)');
+  }
+
+  // Serviciu launchd
+  if (platform() === 'darwin') {
+    const plist = join(homedir(), 'Library', 'LaunchAgents', 'com.novacortex.daemon.plist');
+    existsSync(plist)
+      ? ok('Serviciu launchd: instalat (pornire automată la login)')
+      : warn('Serviciu launchd: neinstalat — rulează "nova service install"');
+  }
+
+  console.log();
+}
+
 // ── nova help ─────────────────────────────────────────────────
 export function cmdHelp(): void {
   console.log(`
 Nova Cortex CLI
 
 COMENZI:
-  nova status              Listează toți agenții și statusul
-  nova start <agent>       Pornește un agent
-  nova stop <agent>        Oprește un agent
-  nova bus <agent> <msg>   Trimite un mesaj prin bus
+  nova status                    Listează toți agenții și statusul
+  nova start <agent>             Pornește un agent
+  nova stop <agent>              Oprește un agent
+  nova bus <agent> <msg>         Trimite un mesaj prin bus
+  nova doctor                    Diagnostic complet al sistemului
+  nova service install           Instalează serviciu launchd (macOS)
+  nova service uninstall         Dezinstalează serviciul
+  nova service status            Statusul serviciului
 
 EXEMPLE:
   nova status
-  nova start analyst
-  nova stop demo
+  nova doctor
+  nova service install
   nova bus orchestrator "Analizează tendințele AI din 2025"
 `);
 }

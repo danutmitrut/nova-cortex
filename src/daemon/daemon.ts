@@ -110,6 +110,11 @@ export class Daemon {
     });
   }
 
+  // ── Returnează lista de nume agenți ─────────────────────────
+  getAgentNames(): string[] {
+    return Array.from(this.agents.keys());
+  }
+
   // ── Returnează statusul tuturor agenților ───────────────────
   getStatus(): Array<{ name: string; status: string; alive: boolean }> {
     return Array.from(this.agents.values()).map(a => ({
