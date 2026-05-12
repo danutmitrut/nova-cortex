@@ -6,3 +6,4 @@ agents/**/.env
 agents/**/secrets.env
 logs/
 *.log
+state/

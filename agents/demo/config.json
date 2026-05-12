@@ -1,4 +1,16 @@
 {
   "name": "demo",
-  "startup_prompt": "Prezintă-te."
+  "startup_prompt": "Prezintă-te.",
+  "crons": [
+    {
+      "expression": "0 8 * * *",
+      "prompt": "Trimite un mesaj de bună dimineața pe Telegram. Include ora exactă și o frază motivațională scurtă.",
+      "label": "Briefing dimineață"
+    },
+    {
+      "expression": "0 21 * * *",
+      "prompt": "Trimite un mesaj de seară pe Telegram. Reamintește că ziua s-a terminat și întreabă dacă există ceva de notat pentru mâine.",
+      "label": "Review seară"
+    }
+  ]
 }
