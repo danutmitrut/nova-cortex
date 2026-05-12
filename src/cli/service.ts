@@ -19,6 +19,7 @@ const PLIST_DIR = join(homedir(), 'Library', 'LaunchAgents');
 const PLIST_PATH = join(PLIST_DIR, `${LABEL}.plist`);
 
 export async function cmdServiceInstall(): Promise<void> {
+  if (platform() === 'win32') return installWindows();
   if (platform() !== 'darwin') {
     printNonMacInstructions();
     return;
@@ -83,6 +84,7 @@ export async function cmdServiceInstall(): Promise<void> {
 }
 
 export async function cmdServiceUninstall(): Promise<void> {
+  if (platform() === 'win32') return uninstallWindows();
   if (platform() !== 'darwin') {
     console.log('Dezinstalare manuală necesară pe această platformă.');
     return;
@@ -99,6 +101,7 @@ export async function cmdServiceUninstall(): Promise<void> {
 }
 
 export function cmdServiceStatus(): void {
+  if (platform() === 'win32') return statusWindows();
   if (platform() !== 'darwin') {
     console.log('Verificare status disponibilă doar pe macOS.');
     return;
@@ -124,21 +127,75 @@ export function cmdServiceStatus(): void {
   console.log(`Plist: ${PLIST_PATH}`);
 }
 
-function printNonMacInstructions(): void {
-  const os = platform();
-  if (os === 'win32') {
-    console.log(`
-Windows — rulare automată la login:
-  1. Deschide Task Scheduler
-  2. Create Basic Task → "Nova Cortex"
-  3. Trigger: "When I log on"
-  4. Action: Start a program
-     Program: node
-     Arguments: --experimental-strip-types src/index.ts
-     Start in: ${process.cwd()}
-`);
+// ── Windows Task Scheduler ───────────────────────────────────
+const WIN_TASK = 'NovaCortex';
+
+function installWindows(): void {
+  const projectDir = process.cwd();
+  const nodeExec = process.execPath;
+  const entryPoint = join(projectDir, 'src', 'index.ts');
+  const logsDir = join(projectDir, 'logs');
+
+  mkdirSync(logsDir, { recursive: true });
+
+  // Wrapper VBScript — pornește node fără fereastră consolă
+  const vbsPath = join(projectDir, 'nova-daemon.vbs');
+  writeFileSync(vbsPath,
+    `Set WshShell = CreateObject("WScript.Shell")\r\n` +
+    `WshShell.Run """${nodeExec}"" --experimental-strip-types ""${entryPoint}""", 0, False\r\n`
+  );
+
+  // Înregistrează task-ul: rulează la login, fără consolă
+  const cmd = [
+    'schtasks', '/create',
+    '/tn', WIN_TASK,
+    '/tr', `wscript.exe "${vbsPath}"`,
+    '/sc', 'ONLOGON',
+    '/rl', 'HIGHEST',
+    '/f',
+  ].join(' ');
+
+  const r = spawnSync('cmd', ['/c', cmd], { stdio: 'pipe', cwd: projectDir });
+  if (r.status !== 0) {
+    console.error('Eroare Task Scheduler:', r.stderr?.toString() || r.stdout?.toString());
+    process.exit(1);
+  }
+
+  console.log(`\nTask "${WIN_TASK}" înregistrat în Task Scheduler.`);
+  console.log('Daemonul va porni automat la următorul login.');
+  console.log('\nPornire imediată (fără restart):');
+  console.log(`  schtasks /run /tn ${WIN_TASK}`);
+  console.log('\nPentru a dezinstala: nova service uninstall');
+}
+
+function uninstallWindows(): void {
+  const r = spawnSync('schtasks', ['/delete', '/tn', WIN_TASK, '/f'], { stdio: 'pipe', shell: true });
+  if (r.status === 0) {
+    console.log(`Task "${WIN_TASK}" șters din Task Scheduler.`);
   } else {
-    console.log(`
+    const msg = r.stderr?.toString() || '';
+    if (msg.includes('cannot find')) {
+      console.log('Task-ul nu era instalat.');
+    } else {
+      console.error('Eroare:', msg);
+    }
+  }
+}
+
+function statusWindows(): void {
+  const r = spawnSync('schtasks', ['/query', '/tn', WIN_TASK, '/fo', 'LIST'], { stdio: 'pipe', shell: true });
+  if (r.status !== 0) {
+    console.log(`Task "${WIN_TASK}": neinstalat. Rulează "nova service install".`);
+    return;
+  }
+  const lines = r.stdout.toString().split('\n').filter(l => /Status|Task To Run|Next Run/i.test(l));
+  console.log(`\nTask Scheduler — ${WIN_TASK}:`);
+  for (const l of lines) console.log(' ', l.trim());
+  console.log('');
+}
+
+function printNonMacInstructions(): void {
+  console.log(`
 Linux — serviciu systemd (user):
   mkdir -p ~/.config/systemd/user/
   cat > ~/.config/systemd/user/nova-cortex.service << EOF
@@ -156,5 +213,4 @@ Linux — serviciu systemd (user):
 
   systemctl --user enable --now nova-cortex
 `);
-  }
 }

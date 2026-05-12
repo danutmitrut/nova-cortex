@@ -524,6 +524,7 @@ export function cmdHelp(): void {
 Nova Cortex CLI
 
 COMENZI:
+  nova setup                          Wizard de configurare (prima rulare)
   nova status                         Listeaza toti agentii si statusul
   nova start <agent>                  Porneste un agent
   nova stop <agent>                   Opreste un agent

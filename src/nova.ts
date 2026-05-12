@@ -10,11 +10,15 @@
 import { cmdStatus, cmdStart, cmdStop, cmdBus, cmdDoctor, cmdHelp, cmdAddAgent, cmdListTemplates, cmdEnable, cmdDisable, cmdHeartbeats, cmdCommunity, cmdImport, cmdLogs, cmdReport, cmdKnowledge, cmdChat } from './cli/commands.ts';
 import { cmdServiceInstall, cmdServiceUninstall, cmdServiceStatus } from './cli/service.ts';
 import { cmdTunnel } from './cli/tunnel.ts';
+import { cmdSetup } from './cli/setup.ts';
 
 const [, , command, ...args] = process.argv;
 
 async function main() {
   switch (command) {
+    case 'setup':
+      await cmdSetup();
+      break;
     case 'status':
       await cmdStatus();
       break;
