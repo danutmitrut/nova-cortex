@@ -17,7 +17,7 @@ import pty from 'node-pty';
 import { readFileSync, existsSync } from 'fs';
 import { join, resolve } from 'path';
 import { platform } from 'os';
-import { TelegramPoller } from './telegram/poller.js';
+import { TelegramPoller } from './telegram/poller.ts';
 
 // ── 1. Citim configurația agentului ─────────────────────────
 const agentDir = resolve('./agents/demo');

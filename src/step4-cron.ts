@@ -17,8 +17,8 @@ import pty from 'node-pty';
 import { readFileSync, existsSync } from 'fs';
 import { join, resolve } from 'path';
 import { platform } from 'os';
-import { TelegramPoller } from './telegram/poller.js';
-import { CronScheduler } from './cron/scheduler.js';
+import { TelegramPoller } from './telegram/poller.ts';
+import { CronScheduler } from './cron/scheduler.ts';
 
 // ── 1. Configurație agent ────────────────────────────────────
 const agentDir = resolve('./agents/demo');

@@ -15,7 +15,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
-import { parseCron, matchesCron, type CronFields } from './parser.js';
+import { parseCron, matchesCron, type CronFields } from './parser.ts';
 
 export interface CronJob {
   id: string;

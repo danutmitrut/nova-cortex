@@ -1,0 +1,5 @@
+{
+  "name": "orchestrator",
+  "startup_prompt": "Ești activ. Anunță-te scurt.",
+  "crons": []
+}
