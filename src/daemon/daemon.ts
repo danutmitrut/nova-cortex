@@ -18,6 +18,7 @@ import { AgentProcess } from './agent-process.ts';
 import { IpcServer } from './ipc.ts';
 import { Watchdog } from './watchdog.ts';
 import { DashboardServer } from '../dashboard/server.ts';
+import { runSecurityScan, printSecurityReport } from '../security/scanner.ts';
 
 export class Daemon {
   private agents: Map<string, AgentProcess> = new Map();
@@ -40,6 +41,9 @@ export class Daemon {
   async start(): Promise<void> {
     console.log('[daemon] Nova Cortex pornit.');
     console.log(`[daemon] Caut agenți în: ${this.agentsDir}`);
+
+    const findings = runSecurityScan(this.agentsDir, this.knowledgeDir);
+    printSecurityReport(findings);
 
     this.discoverAgents();
     this.startAllAgents();
