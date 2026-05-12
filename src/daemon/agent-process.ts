@@ -12,8 +12,8 @@
 // ============================================================
 
 import pty from 'node-pty';
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
+import { join, resolve } from 'path';
 import { platform } from 'os';
 import { TelegramPoller } from '../telegram/poller.ts';
 import { CronScheduler } from '../cron/scheduler.ts';
@@ -101,6 +101,13 @@ export class AgentProcess {
       this.config.startup_prompt,
     ];
 
+    // Genereaza .claude/settings.json cu hooks inregistrate
+    this.generateHooksSettings();
+
+    const agentStateDir = resolve(this.stateDir, this.name);
+    const hooksDir = resolve(new URL('../../src/hooks', import.meta.url).pathname);
+    const novaCmd = resolve(new URL('../../src/nova.ts', import.meta.url).pathname);
+
     this.ptyProcess = pty.spawn(claudeCmd, args, {
       name: 'xterm-256color',
       cols: 220,
@@ -110,6 +117,10 @@ export class AgentProcess {
         ...process.env,
         PATH: `/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:${process.env.PATH}`,
         ...this.envVars,
+        NC_AGENT_NAME: this.name,
+        NC_STATE_DIR: agentStateDir,
+        NC_HOOKS_DIR: hooksDir,
+        NC_NOVA_CMD: novaCmd,
       } as Record<string, string>,
     });
 
@@ -185,9 +196,85 @@ export class AgentProcess {
     this.inject(buildSavePrompt(this.name, this.stateDir));
   }
 
+  // ── Genereaza .claude/settings.json cu hooks inregistrate ───
+  private generateHooksSettings(): void {
+    const claudeDir = join(this.agentDir, '.claude');
+    const settingsPath = join(claudeDir, 'settings.json');
+    mkdirSync(claudeDir, { recursive: true });
+
+    const agentStateDir = resolve(this.stateDir, this.name);
+    const hooksDir = resolve(new URL('../../src/hooks', import.meta.url).pathname);
+    // node cu --experimental-strip-types ruleaza direct TypeScript
+    const nodeCmd = process.execPath;
+    const hook = (name: string) =>
+      `NC_AGENT_NAME=${this.name} NC_STATE_DIR=${agentStateDir} ${nodeCmd} --experimental-strip-types ${join(hooksDir, name)}`;
+
+    const settings = {
+      permissions: {
+        allow: ['Bash', 'Read', 'Edit', 'Write', 'WebFetch', 'WebSearch'],
+      },
+      hooks: {
+        PermissionRequest: [
+          {
+            matcher: 'ExitPlanMode',
+            hooks: [{ type: 'command', command: hook('planmode-telegram.ts'), timeout: 1860 }],
+          },
+          {
+            hooks: [{ type: 'command', command: hook('permission-telegram.ts'), timeout: 1860 }],
+          },
+        ],
+        PreToolUse: [
+          {
+            matcher: 'AskUserQuestion',
+            hooks: [{ type: 'command', command: hook('ask-telegram.ts'), timeout: 10 }],
+          },
+        ],
+        SessionEnd: [
+          {
+            hooks: [{ type: 'command', command: hook('crash-alert.ts'), timeout: 10 }],
+          },
+        ],
+        PreCompact: [
+          {
+            hooks: [{ type: 'command', command: hook('extract-facts.ts'), timeout: 15 }],
+          },
+        ],
+        PostToolUse: [
+          {
+            matcher: 'TodoWrite|Task|Bash',
+            hooks: [{ type: 'command', command: hook('idle-flag.ts'), timeout: 5 }],
+          },
+        ],
+      },
+    };
+
+    // Merge cu settings.json existent daca are permisiuni custom
+    let existing: any = {};
+    if (existsSync(settingsPath)) {
+      try { existing = JSON.parse(readFileSync(settingsPath, 'utf-8')); } catch {}
+    }
+
+    const merged = {
+      ...existing,
+      ...settings,
+      permissions: {
+        allow: [
+          ...new Set([
+            ...(existing.permissions?.allow || []),
+            ...settings.permissions.allow,
+          ]),
+        ],
+      },
+    };
+
+    writeFileSync(settingsPath, JSON.stringify(merged, null, 2), 'utf-8');
+    console.log(`[${this.name}] Hooks inregistrate in .claude/settings.json`);
+  }
+
   // ── Pornești Telegram + Cron ─────────────────────────────────
   private startServices(): void {
     const { BOT_TOKEN, CHAT_ID } = this.envVars;
+    const agentStateDir = resolve(this.stateDir, this.name);
 
     if (BOT_TOKEN && CHAT_ID) {
       this.poller = new TelegramPoller(BOT_TOKEN, (text, chatId) => {
@@ -195,7 +282,7 @@ export class AgentProcess {
         this.inject(
           `Mesaj nou pe Telegram de la chat ${chatId}: "${text}"\nRăspunde via curl cu BOT_TOKEN și CHAT_ID din env.`
         );
-      });
+      }, agentStateDir);
       this.poller.start();
 
       // Mesaj de bun venit la fiecare boot al agentului
