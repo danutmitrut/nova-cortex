@@ -115,6 +115,11 @@ export class Daemon {
     return Array.from(this.agents.keys());
   }
 
+  // ── Returnează output-ul PTY al unui agent specific ──────────
+  getAgentOutput(name: string): string[] {
+    return this.agents.get(name)?.getOutput() ?? [];
+  }
+
   // ── Returnează statusul tuturor agenților ───────────────────
   getStatus(): Array<{ name: string; status: string; alive: boolean }> {
     return Array.from(this.agents.values()).map(a => ({

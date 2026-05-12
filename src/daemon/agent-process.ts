@@ -49,6 +49,8 @@ export class AgentProcess {
   private _onExit: ((name: string, exitCode: number) => void) | null = null;
   private _intentionalStop = false;
   private memoryTimer: ReturnType<typeof setInterval> | null = null;
+  private outputBuffer: string[] = [];
+  private static readonly MAX_OUTPUT = 200;
 
   constructor(agentDir: string, stateDir: string, busDir: string, knowledgeDir = '') {
     this.agentDir = agentDir;
@@ -114,9 +116,18 @@ export class AgentProcess {
     this._status = 'running';
     console.log(`[${this.name}] PTY pornit (PID: ${this.ptyProcess.pid})`);
 
-    // Afișăm output-ul în consolă cu prefix de agent
+    // Afișăm output-ul în consolă și îl capturăm în buffer
     this.ptyProcess.onData((data) => {
       process.stdout.write(`[${this.name}] ${data}`);
+      // Strip ANSI escape codes pentru buffer curat
+      const clean = data.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '').replace(/\x1b[()][A-B0-2]/g, '');
+      for (const line of clean.split('\n')) {
+        const trimmed = line.trim();
+        if (trimmed) {
+          this.outputBuffer.push(trimmed);
+          if (this.outputBuffer.length > AgentProcess.MAX_OUTPUT) this.outputBuffer.shift();
+        }
+      }
     });
 
     // Auto-acceptăm "trust this folder?"
@@ -161,6 +172,10 @@ export class AgentProcess {
 
   isAlive(): boolean {
     return this._status === 'running';
+  }
+
+  getOutput(): string[] {
+    return [...this.outputBuffer];
   }
 
   // ── Cere agentului să își salveze memoria ────────────────────

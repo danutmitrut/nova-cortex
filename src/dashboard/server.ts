@@ -45,10 +45,14 @@ export class DashboardServer {
     if (method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
     if (method === 'GET') {
-      if (url === '/api/status')  return this.sendJson(res, { agents: this.daemon.getStatus() });
-      if (url === '/api/bus')     return this.sendJson(res, { messages: this.getRecentBusMessages() });
-      if (url === '/api/logs')    return this.sendJson(res, { lines: getRecentLogs() });
-      if (url === '/api/agents')  return this.sendJson(res, { agents: this.daemon.getAgentNames() });
+      if (url === '/api/status')               return this.sendJson(res, { agents: this.daemon.getStatus() });
+      if (url === '/api/bus')                  return this.sendJson(res, { messages: this.getRecentBusMessages() });
+      if (url === '/api/logs')                 return this.sendJson(res, { lines: getRecentLogs() });
+      if (url === '/api/agents')               return this.sendJson(res, { agents: this.daemon.getAgentNames() });
+      if (url.startsWith('/api/output/')) {
+        const name = url.slice('/api/output/'.length);
+        return this.sendJson(res, { lines: this.daemon.getAgentOutput(name) });
+      }
       return this.sendHtml(res);
     }
 
