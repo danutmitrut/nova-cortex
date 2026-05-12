@@ -7,6 +7,7 @@
     "build": "tsc",
     "dev": "node --experimental-strip-types src/index.ts",
     "nova": "node --experimental-strip-types src/nova.ts",
+    "setup": "node --experimental-strip-types src/onboarding/wizard.ts",
     "postinstall": "node -e \"const{platform}=require('os'),{execSync}=require('child_process');if(platform()!=='win32')try{execSync('chmod +x node_modules/node-pty/prebuilds/darwin-arm64/spawn-helper node_modules/node-pty/prebuilds/darwin-x64/spawn-helper',{stdio:'ignore'})}catch{}\""
   },
   "dependencies": {
