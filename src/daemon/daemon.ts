@@ -16,9 +16,11 @@ import { readdirSync, existsSync } from 'fs';
 import { join, resolve } from 'path';
 import { AgentProcess } from './agent-process.ts';
 import { IpcServer } from './ipc.ts';
+import { Watchdog } from './watchdog.ts';
 
 export class Daemon {
   private agents: Map<string, AgentProcess> = new Map();
+  private watchdogs: Map<string, Watchdog> = new Map();
   private agentsDir: string;
   private stateDir: string;
   private ipc: IpcServer;
@@ -64,14 +66,16 @@ export class Daemon {
 
       try {
         const agent = new AgentProcess(agentDir, this.stateDir);
+        const watchdog = new Watchdog(agent);
 
-        // Daemonul e notificat când agentul se închide
-        // (Step 6 va adăuga restart automat aici)
+        // Watchdog preia controlul la crash — repornește cu backoff
         agent.onExit((name, exitCode) => {
           console.log(`[daemon] Agentul "${name}" s-a închis (cod: ${exitCode})`);
+          watchdog.onAgentExit(exitCode);
         });
 
         this.agents.set(agent.name, agent);
+        this.watchdogs.set(agent.name, watchdog);
         console.log(`[daemon] Agent descoperit: "${agent.name}"`);
       } catch (err) {
         console.error(`[daemon] Eroare la încărcarea agentului ${entry.name}:`, err);
@@ -81,8 +85,10 @@ export class Daemon {
 
   // ── Pornește toți agenții descoperiți ────────────────────────
   private startAllAgents(): void {
-    for (const agent of this.agents.values()) {
+    for (const [name, agent] of this.agents.entries()) {
       agent.start();
+      // Pornim timerul de stabilitate de la primul start
+      this.watchdogs.get(name)?.scheduleStabilityCheck();
     }
   }
 
@@ -115,6 +121,11 @@ export class Daemon {
   private setupShutdown(): void {
     const shutdown = () => {
       console.log('\n[daemon] Oprire ordonată...');
+      // Oprim watchdog-urile ÎNAINTE de agenți — altfel watchdog-ul
+      // ar detecta oprirea ca un crash și ar încerca să repornească
+      for (const watchdog of this.watchdogs.values()) {
+        watchdog.stop();
+      }
       for (const agent of this.agents.values()) {
         agent.stop();
       }

@@ -39,6 +39,7 @@ export class AgentProcess {
 
   private _status: AgentStatus = 'stopped';
   private _onExit: ((name: string, exitCode: number) => void) | null = null;
+  private _intentionalStop = false; // previne watchdog-ul la oprire manuală
 
   constructor(agentDir: string, stateDir: string) {
     this.agentDir = agentDir;
@@ -106,15 +107,21 @@ export class AgentProcess {
 
     // Detectăm închiderea
     this.ptyProcess.onExit(({ exitCode }) => {
+      // Dacă am oprit noi intenționat, raportăm exitCode 0
+      // → watchdog-ul nu va reporni agentul
+      const reportedCode = this._intentionalStop ? 0 : exitCode;
+      this._intentionalStop = false;
+
       console.log(`[${this.name}] Ieșit cu codul: ${exitCode}`);
       this._status = exitCode === 0 ? 'stopped' : 'crashed';
       this.stopServices();
-      this._onExit?.(this.name, exitCode);
+      this._onExit?.(this.name, reportedCode);
     });
   }
 
   // ── Oprești agentul ──────────────────────────────────────────
   stop(): void {
+    this._intentionalStop = true; // semnalăm watchdog-ului că e oprire voluntară
     this.stopServices();
     if (this.ptyProcess) {
       this.ptyProcess.kill();
