@@ -1,0 +1,17 @@
+{
+  "name": "nova-cortex",
+  "version": "0.1.0",
+  "description": "Multi-agent orchestration system",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "node --experimental-strip-types src/index.ts"
+  },
+  "dependencies": {
+    "node-pty": "^1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^22.0.0"
+  }
+}

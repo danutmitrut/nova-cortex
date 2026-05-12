@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.env
+.env
+orgs/*/secrets.env
+orgs/**/.env
+logs/
+*.log
