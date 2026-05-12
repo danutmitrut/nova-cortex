@@ -150,14 +150,14 @@ export class Daemon {
     const shutdown = async () => {
       console.log('\n[daemon] Oprire ordonată — salvez memoria agenților...');
 
-      // Cerem fiecărui agent să își salveze memoria
-      // înainte de a opri watchdog-urile și procesele
+      // Cerem fiecarui agent sa isi salveze memoria si sa genereze raport
       for (const agent of this.agents.values()) {
         agent.saveMemory();
+        agent.saveSessionReport();
       }
 
-      // Așteptăm 12s ca agenții să scrie fișierele de memorie
-      await new Promise(r => setTimeout(r, 12_000));
+      // Asteptam 15s ca agentii sa scrie memoria si raportul de sesiune
+      await new Promise(r => setTimeout(r, 15_000));
 
       for (const watchdog of this.watchdogs.values()) {
         watchdog.stop();

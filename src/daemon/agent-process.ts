@@ -205,6 +205,43 @@ export class AgentProcess {
     this.inject(buildSavePrompt(this.name, this.stateDir));
   }
 
+  // ── Genereaza raport de sesiune la inchidere ─────────────────
+  saveSessionReport(): void {
+    if (!this.isAlive()) return;
+    const reportsDir = join(resolve(this.stateDir, this.name), 'reports');
+    const date = new Date().toISOString().slice(0, 10);
+    const reportPath = join(reportsDir, `${date}.md`);
+    mkdirSync(reportsDir, { recursive: true });
+
+    const prompt = `[SESSION CLOSE REPORT] Genereaza un raport de sesiune structurat si salveaza-l cu bash in: ${reportPath}
+
+Formatul raportului:
+# Raport sesiune — ${this.name} — ${date}
+
+## Ce am facut
+(lista taskuri completate cu rezultate)
+
+## Decizii luate
+(decizii importante din aceasta sesiune)
+
+## In curs / blocat
+(ce n-am terminat si de ce)
+
+## Urmatoarea sesiune
+(ce trebuie continuat sau prioritizat)
+
+Salveaza cu:
+\`\`\`bash
+mkdir -p ${reportsDir}
+cat > ${reportPath} << 'REPORT_EOF'
+[continutul raportului]
+REPORT_EOF
+\`\`\``;
+
+    console.log(`[${this.name}] Generez raport de sesiune...`);
+    this.inject(prompt);
+  }
+
   // ── Genereaza .claude/settings.json cu hooks inregistrate ───
   private generateHooksSettings(): void {
     const claudeDir = join(this.agentDir, '.claude');
