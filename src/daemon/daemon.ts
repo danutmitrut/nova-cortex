@@ -20,6 +20,7 @@ import { Watchdog } from './watchdog.ts';
 import { DashboardServer } from '../dashboard/server.ts';
 import { runSecurityScan, printSecurityReport } from '../security/scanner.ts';
 import { AgentRegistry } from './agent-registry.ts';
+import { CronScheduler } from './cron-scheduler.ts';
 
 export class Daemon {
   private agents: Map<string, AgentProcess> = new Map();
@@ -30,6 +31,7 @@ export class Daemon {
   private knowledgeDir: string;
   private ipc: IpcServer;
   private registry: AgentRegistry;
+  private cron: CronScheduler = new CronScheduler();
 
   constructor(agentsDir: string, stateDir: string, busDir: string, knowledgeDir = '') {
     this.agentsDir = resolve(agentsDir);
@@ -50,6 +52,7 @@ export class Daemon {
 
     this.discoverAgents();
     this.startAllAgents();
+    this.cron.start();
     this.ipc.start();
     new DashboardServer(this, this.busDir, this.stateDir).start();
     this.setupShutdown();
@@ -95,6 +98,13 @@ export class Daemon {
 
         this.agents.set(agent.name, agent);
         this.watchdogs.set(agent.name, watchdog);
+
+        // Înregistrează cron-urile din config.json
+        try {
+          const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
+          if (cfg.crons?.length) this.cron.register(agent.name, cfg.crons, this.busDir);
+        } catch {}
+
         console.log(`[daemon] Agent descoperit: "${agent.name}"`);
       } catch (err) {
         console.error(`[daemon] Eroare la încărcarea agentului ${entry.name}:`, err);
@@ -171,6 +181,10 @@ export class Daemon {
         });
         this.agents.set(name, agent);
         this.watchdogs.set(name, watchdog);
+        try {
+          const cfg = JSON.parse(readFileSync(join(agentDir, 'config.json'), 'utf-8'));
+          if (cfg.crons?.length) this.cron.register(name, cfg.crons, this.busDir);
+        } catch {}
         agent.start();
         watchdog.scheduleStabilityCheck();
         console.log(`[daemon] Agent "${name}" activat si pornit.`);
@@ -222,6 +236,7 @@ export class Daemon {
       // Asteptam 15s ca agentii sa scrie memoria si raportul de sesiune
       await new Promise(r => setTimeout(r, 15_000));
 
+      this.cron.stop();
       for (const watchdog of this.watchdogs.values()) {
         watchdog.stop();
       }

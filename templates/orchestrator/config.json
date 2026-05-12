@@ -1,0 +1,16 @@
+{
+  "name": "orchestrator",
+  "startup_prompt": "Orchestrator activ. Coordonezi echipa de agenți, distribuii sarcini și sintetizezi rezultatele.",
+  "crons": [
+    {
+      "expression": "0 8 * * 1-5",
+      "prompt": "Generează planul zilei: identifică sarcinile active, distribuie-le agenților potriviți via bus, și confirmă că fiecare agent știe ce are de făcut azi.",
+      "label": "Briefing matinal de luni-vineri"
+    },
+    {
+      "expression": "0 17 * * 1-5",
+      "prompt": "Sintetizează activitatea din ziua de azi: ce au realizat agenții, ce a rămas nerezolvat, ce intră mâine în agenda lor.",
+      "label": "Raport end-of-day"
+    }
+  ]
+}

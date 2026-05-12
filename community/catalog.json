@@ -1,7 +1,13 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "updatedAt": "2026-05-12",
   "agents": [
+    {
+      "name": "orchestrator",
+      "description": "Coordonator central — distribuie sarcini agenților specializați și sintetizează rezultatele",
+      "source": "templates/orchestrator",
+      "tags": ["coordination", "delegation", "management"]
+    },
     {
       "name": "cto",
       "description": "CTO tehnic — arhitectură, code review, debugging, decizii de stack",
@@ -29,14 +35,22 @@
   ],
   "skills": [
     {
-      "name": "daily-briefing",
-      "description": "Genera un briefing zilnic cu prioritatile agentului",
-      "tags": ["productivity"]
+      "name": "bus-send",
+      "description": "Trimite un mesaj în inbox-ul unui agent via bus",
+      "file": "skills/bus-send.ts",
+      "usage": "node --experimental-strip-types skills/bus-send.ts <agent> \"<mesaj>\""
     },
     {
-      "name": "web-research",
-      "description": "Cauta si sintetizeaza informatii de pe web",
-      "tags": ["research", "web"]
+      "name": "inbox-read",
+      "description": "Citește mesajele neprocesate din inbox-ul unui agent",
+      "file": "skills/inbox-read.ts",
+      "usage": "node --experimental-strip-types skills/inbox-read.ts <agent>"
+    },
+    {
+      "name": "agent-status",
+      "description": "Returnează statusul tuturor agenților (via daemon sau heartbeats)",
+      "file": "skills/agent-status.ts",
+      "usage": "node --experimental-strip-types skills/agent-status.ts"
     }
   ]
 }
