@@ -142,10 +142,18 @@ export class Daemon {
 
   // ── Oprire ordonată la SIGINT / SIGTERM ──────────────────────
   private setupShutdown(): void {
-    const shutdown = () => {
-      console.log('\n[daemon] Oprire ordonată...');
-      // Oprim watchdog-urile ÎNAINTE de agenți — altfel watchdog-ul
-      // ar detecta oprirea ca un crash și ar încerca să repornească
+    const shutdown = async () => {
+      console.log('\n[daemon] Oprire ordonată — salvez memoria agenților...');
+
+      // Cerem fiecărui agent să își salveze memoria
+      // înainte de a opri watchdog-urile și procesele
+      for (const agent of this.agents.values()) {
+        agent.saveMemory();
+      }
+
+      // Așteptăm 12s ca agenții să scrie fișierele de memorie
+      await new Promise(r => setTimeout(r, 12_000));
+
       for (const watchdog of this.watchdogs.values()) {
         watchdog.stop();
       }

@@ -21,6 +21,7 @@ import { BusInbox } from '../bus/inbox.ts';
 import { sendMessage } from '../bus/send.ts';
 import { ragSearch, formatRagContext } from '../rag/search.ts';
 import { sendTelegramMessage } from '../telegram/poller.ts';
+import { loadMemory, formatMemoryForPrompt, buildSavePrompt } from './memory.ts';
 
 export interface AgentConfig {
   name: string;
@@ -46,7 +47,8 @@ export class AgentProcess {
 
   private _status: AgentStatus = 'stopped';
   private _onExit: ((name: string, exitCode: number) => void) | null = null;
-  private _intentionalStop = false; // previne watchdog-ul la oprire manuală
+  private _intentionalStop = false;
+  private memoryTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(agentDir: string, stateDir: string, busDir: string, knowledgeDir = '') {
     this.agentDir = agentDir;
@@ -80,10 +82,20 @@ export class AgentProcess {
       ? readFileSync(identityPath, 'utf-8')
       : '';
 
+    const memory = loadMemory(this.name, this.stateDir);
+    if (memory) {
+      console.log(`[${this.name}] Memorie găsită — injectată în system prompt.`);
+    }
+
+    const systemPrompt = [
+      identityContent,
+      memory ? formatMemoryForPrompt(memory) : '',
+    ].filter(Boolean).join('\n\n---\n\n');
+
     const claudeCmd = platform() === 'win32' ? 'claude.cmd' : 'claude';
     const args = [
       '--dangerously-skip-permissions',
-      ...(identityContent ? ['--append-system-prompt', identityContent] : []),
+      ...(systemPrompt ? ['--append-system-prompt', systemPrompt] : []),
       this.config.startup_prompt,
     ];
 
@@ -151,6 +163,13 @@ export class AgentProcess {
     return this._status === 'running';
   }
 
+  // ── Cere agentului să își salveze memoria ────────────────────
+  saveMemory(): void {
+    if (!this.isAlive()) return;
+    console.log(`[${this.name}] Salvez memoria...`);
+    this.inject(buildSavePrompt(this.name, this.stateDir));
+  }
+
   // ── Pornești Telegram + Cron ─────────────────────────────────
   private startServices(): void {
     const { BOT_TOKEN, CHAT_ID } = this.envVars;
@@ -196,6 +215,12 @@ export class AgentProcess {
     });
     this.busInbox.start();
 
+    // ── Salvare periodică memorie la 30 de minute ────────────────
+    const THIRTY_MIN = 30 * 60 * 1000;
+    this.memoryTimer = setInterval(() => {
+      if (this.isAlive()) this.saveMemory();
+    }, THIRTY_MIN);
+
     // ── RAG: injectăm context relevant din knowledge base ────────
     if (this.knowledgeDir) {
       const chunks = ragSearch(this.config.startup_prompt, this.knowledgeDir, 3);
@@ -207,7 +232,7 @@ export class AgentProcess {
     }
   }
 
-  // ── Oprești serviciile (Telegram + Cron + Bus) ───────────────
+  // ── Oprești serviciile (Telegram + Cron + Bus + Memory) ──────
   private stopServices(): void {
     this.poller?.stop();
     this.poller = null;
@@ -215,6 +240,10 @@ export class AgentProcess {
     this.cron = null;
     this.busInbox?.stop();
     this.busInbox = null;
+    if (this.memoryTimer) {
+      clearInterval(this.memoryTimer);
+      this.memoryTimer = null;
+    }
   }
 
   // ── Trimite un mesaj bus către un alt agent ──────────────────
