@@ -98,6 +98,10 @@ export class IpcServer {
       case 'heartbeats':
         return { ok: true, heartbeats: this.daemon.getHeartbeats() };
 
+      case 'output':
+        if (!cmd.agent) return { ok: false, error: 'Lipsește agent' };
+        return { ok: true, lines: this.daemon.getAgentOutput(cmd.agent) };
+
       default:
         return { ok: false, error: `Comandă necunoscută: ${cmd.command}` };
     }

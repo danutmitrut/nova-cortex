@@ -7,7 +7,7 @@
 // Comenzi: status | start | stop | bus
 // ============================================================
 
-import { cmdStatus, cmdStart, cmdStop, cmdBus, cmdDoctor, cmdHelp, cmdAddAgent, cmdListTemplates, cmdEnable, cmdDisable, cmdHeartbeats, cmdCommunity, cmdImport } from './cli/commands.ts';
+import { cmdStatus, cmdStart, cmdStop, cmdBus, cmdDoctor, cmdHelp, cmdAddAgent, cmdListTemplates, cmdEnable, cmdDisable, cmdHeartbeats, cmdCommunity, cmdImport, cmdLogs, cmdReport, cmdKnowledge, cmdChat } from './cli/commands.ts';
 import { cmdServiceInstall, cmdServiceUninstall, cmdServiceStatus } from './cli/service.ts';
 import { cmdTunnel } from './cli/tunnel.ts';
 
@@ -53,6 +53,18 @@ async function main() {
       break;
     case 'tunnel':
       await cmdTunnel(args[0]);
+      break;
+    case 'logs':
+      await cmdLogs(args[0]);
+      break;
+    case 'report':
+      cmdReport(args[0]);
+      break;
+    case 'knowledge':
+      cmdKnowledge(args[0], args[1]);
+      break;
+    case 'chat':
+      await cmdChat(args[0], args.slice(1).join(' '));
       break;
     case 'service':
       switch (args[0]) {

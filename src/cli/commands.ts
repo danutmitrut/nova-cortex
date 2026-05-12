@@ -8,7 +8,7 @@
 // ============================================================
 
 import { sendCommand } from './client.ts';
-import { writeFileSync, mkdirSync, existsSync, readdirSync, readFileSync, cpSync } from 'fs';
+import { writeFileSync, mkdirSync, existsSync, readdirSync, readFileSync, cpSync, rmSync, statSync } from 'fs';
 import { join, resolve } from 'path';
 import { randomUUID } from 'crypto';
 import { spawnSync } from 'child_process';
@@ -363,6 +363,162 @@ export function cmdAddAgent(name: string, templateName?: string): void {
   }
 }
 
+// ── nova logs <agent> ─────────────────────────────────────────
+export async function cmdLogs(name: string): Promise<void> {
+  if (!name) { console.error('Utilizare: nova logs <agent>'); process.exit(1); }
+
+  const initial = await sendCommand({ command: 'output', agent: name }) as { ok: boolean; lines?: string[]; error?: string };
+  if (!initial.ok) { console.error(`Eroare: ${initial.error ?? 'Agent necunoscut'}`); process.exit(1); }
+
+  const lines = initial.lines ?? [];
+  for (const line of lines) process.stdout.write(line + '\n');
+  let lastCount = lines.length;
+
+  process.stderr.write(`\n\x1b[2m[nova logs] "${name}" — Ctrl+C pentru a ieși\x1b[0m\n\n`);
+
+  const timer = setInterval(async () => {
+    try {
+      const r = await sendCommand({ command: 'output', agent: name }) as { ok: boolean; lines?: string[] };
+      if (!r.ok) return;
+      const next = r.lines ?? [];
+      for (let i = lastCount; i < next.length; i++) process.stdout.write(next[i] + '\n');
+      lastCount = next.length;
+    } catch {}
+  }, 800);
+
+  process.on('SIGINT', () => { clearInterval(timer); process.exit(0); });
+  // Ținut viu — clearInterval e singurul exit
+  await new Promise(() => {});
+}
+
+// ── nova report <agent> ───────────────────────────────────────
+export function cmdReport(name: string): void {
+  if (!name) { console.error('Utilizare: nova report <agent>'); process.exit(1); }
+
+  const reportsDir = resolve('./state', name, 'reports');
+  if (!existsSync(reportsDir)) {
+    console.log(`Niciun raport pentru "${name}". Rapoartele sunt generate la shutdown.`);
+    return;
+  }
+
+  const files = readdirSync(reportsDir)
+    .filter(f => f.endsWith('.md'))
+    .sort()
+    .reverse();
+
+  if (!files.length) { console.log('Niciun raport disponibil.'); return; }
+
+  const [latest, ...rest] = files;
+  const content = readFileSync(join(reportsDir, latest), 'utf-8');
+
+  console.log(`\n\x1b[32m=== Raport: ${name} — ${latest.replace('.md', '')} ===\x1b[0m\n`);
+  console.log(content);
+
+  if (rest.length) {
+    console.log(`\x1b[2m(${rest.length} raport/e anterioare în state/${name}/reports/)\x1b[0m\n`);
+  }
+}
+
+// ── nova knowledge list|show|add ──────────────────────────────
+export function cmdKnowledge(sub: string, arg?: string): void {
+  const knowledgeDir = resolve('./knowledge');
+
+  switch (sub) {
+    case 'list': {
+      if (!existsSync(knowledgeDir)) { console.log('Directorul knowledge/ nu există.'); return; }
+      const files = readdirSync(knowledgeDir).filter(f => /\.(md|txt|json)$/.test(f));
+      if (!files.length) { console.log('Knowledge base gol.'); return; }
+      console.log('\nKnowledge base:\n');
+      for (const f of files) {
+        const kb = Math.round(statSync(join(knowledgeDir, f)).size / 102.4) / 10;
+        console.log(`  ${f.padEnd(32)} ${kb}kb`);
+      }
+      console.log('\nFolosește: nova knowledge show <fișier>\n');
+      break;
+    }
+    case 'show': {
+      if (!arg) { console.error('Utilizare: nova knowledge show <fișier>'); process.exit(1); }
+      const p = join(knowledgeDir, arg);
+      if (!existsSync(p)) { console.error(`"${arg}" nu există în knowledge/.`); process.exit(1); }
+      console.log(readFileSync(p, 'utf-8'));
+      break;
+    }
+    case 'add': {
+      if (!arg) { console.error('Utilizare: nova knowledge add <titlu>'); process.exit(1); }
+      mkdirSync(knowledgeDir, { recursive: true });
+      const filename = arg.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') + '.md';
+      const p = join(knowledgeDir, filename);
+      if (existsSync(p)) { console.error(`"${filename}" există deja.`); process.exit(1); }
+      writeFileSync(p, `# ${arg}\n\n(Adaugă conținut aici)\n`, 'utf-8');
+      console.log(`Creat: knowledge/${filename}`);
+      console.log(`Editează cu: $EDITOR knowledge/${filename}`);
+      break;
+    }
+    default:
+      console.error('Utilizare: nova knowledge list|show <fișier>|add <titlu>');
+      process.exit(1);
+  }
+}
+
+// ── nova chat <agent> <mesaj> ─────────────────────────────────
+// Trimite mesaj și urmărește output-ul agentului live (60s)
+export async function cmdChat(name: string, message: string): Promise<void> {
+  if (!name || !message) {
+    console.error('Utilizare: nova chat <agent> "<mesaj>"');
+    process.exit(1);
+  }
+
+  const busDir = resolve('./bus');
+  const inboxDir = join(busDir, name, 'inbox');
+
+  if (!existsSync(join(busDir, name))) {
+    console.error(`Agentul "${name}" nu are inbox. Daemonul rulează?`);
+    process.exit(1);
+  }
+
+  mkdirSync(inboxDir, { recursive: true });
+
+  const id = randomUUID();
+  const ts = new Date().toISOString();
+  const filename = `${ts.replace(/[:.]/g, '-').slice(0, 19)}-${id}.json`;
+
+  writeFileSync(join(inboxDir, filename), JSON.stringify({
+    id, from: 'cli-chat', to: name, content: message, timestamp: ts, requiresAck: false,
+  }, null, 2));
+
+  console.log(`\x1b[32m→ Mesaj trimis la "${name}"\x1b[0m`);
+  console.log(`\x1b[2m[nova chat] Output live (60s). Ctrl+C pentru a ieși.\x1b[0m\n`);
+
+  // Tail output agentului pentru 60s după trimitere
+  const initial = await sendCommand({ command: 'output', agent: name }) as { ok: boolean; lines?: string[] };
+  let lastCount = (initial.lines ?? []).length;
+  let idleSeconds = 0;
+  const IDLE_TIMEOUT = 60;
+
+  const timer = setInterval(async () => {
+    try {
+      const r = await sendCommand({ command: 'output', agent: name }) as { ok: boolean; lines?: string[] };
+      if (!r.ok) return;
+      const next = r.lines ?? [];
+      if (next.length > lastCount) {
+        for (let i = lastCount; i < next.length; i++) process.stdout.write(next[i] + '\n');
+        lastCount = next.length;
+        idleSeconds = 0;
+      } else {
+        idleSeconds++;
+        if (idleSeconds >= IDLE_TIMEOUT) {
+          clearInterval(timer);
+          process.stderr.write(`\n\x1b[2m[nova chat] 60s fără output nou. Ieșire.\x1b[0m\n`);
+          process.exit(0);
+        }
+      }
+    } catch {}
+  }, 1000);
+
+  process.on('SIGINT', () => { clearInterval(timer); process.exit(0); });
+  await new Promise(() => {});
+}
+
 export function cmdHelp(): void {
   console.log(`
 Nova Cortex CLI
@@ -374,6 +530,12 @@ COMENZI:
   nova enable <agent>                 Activeaza un agent (persistent)
   nova disable <agent>                Dezactiveaza un agent (persistent)
   nova heartbeats                     Afiseaza heartbeat-urile tuturor agentilor
+  nova logs <agent>                   Urmareste output-ul live al unui agent
+  nova report <agent>                 Afiseaza ultimul raport de sesiune
+  nova chat <agent> <msg>             Trimite mesaj si urmareste raspunsul live
+  nova knowledge list                 Listeaza fisierele din knowledge base
+  nova knowledge show <fisier>        Afiseaza continutul unui fisier
+  nova knowledge add <titlu>          Creeaza un fisier nou in knowledge base
   nova bus <agent> <msg>              Trimite un mesaj prin bus
   nova doctor                         Diagnostic complet al sistemului
   nova add-agent <name>               Creeaza un agent nou (gol)
