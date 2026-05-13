@@ -1,7 +1,7 @@
-# Nova Cortex — Prezentare generală a sistemului
+# My HerOS — Prezentare generală a sistemului
 
-## Ce este Nova Cortex
-Nova Cortex este o platformă de orchestrare multi-agent bazată pe Claude Code.
+## Ce este My HerOS
+My HerOS este o platformă de orchestrare multi-agent bazată pe Claude Code.
 Fiecare agent rulează ca un proces Claude Code independent, coordonat de un daemon central.
 
 ## Arhitectura sistemului
@@ -56,4 +56,4 @@ node --experimental-strip-types skills/agent-status.ts
 ## Dashboard
 
 Disponibil la http://localhost:4242 (necesită token din consolă).
-Acces remote: `nova tunnel start`
+Acces remote: `myheros tunnel start`

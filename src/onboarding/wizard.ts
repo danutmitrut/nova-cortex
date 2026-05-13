@@ -1,5 +1,5 @@
 // ============================================================
-// Nova Cortex — Wizard de onboarding
+// My HerOS — Wizard de onboarding
 // ============================================================
 // Rulare: node --experimental-strip-types src/onboarding/wizard.ts
 // Sau:    npm run setup
@@ -74,7 +74,7 @@ function checkNodeVersion(): { ok: boolean; version: string } {
 async function stepWelcome(): Promise<void> {
   console.clear();
   print(`
-${C.bold}${C.cyan}   ▸ Nova Cortex — Sistem Multi-Agent AI${C.reset}
+${C.bold}${C.cyan}   ▸ My HerOS — Sistem Multi-Agent AI${C.reset}
 ${C.dim}   Wizard de configurare${C.reset}
 `);
   line();
@@ -169,7 +169,7 @@ Rolul tău: ${role || 'asistent personal AI'}.
   writeFileSync(join(agentDir, 'IDENTITY.md'), `# Identitate
 
 Numele tău este **${safeName}**.
-Faci parte din sistemul Nova Cortex.
+Faci parte din sistemul My HerOS.
 
 ## La pornire
 
@@ -262,7 +262,7 @@ async function stepTelegram(agentDir: string, agentName: string): Promise<void> 
 
     print('  Se trimite mesaj de test...');
     const sent = await sendTelegramMessage(token, chatId,
-      `Nova Cortex — configurare reusita!\nAgentul tau "${agentName}" este pregatit. La "npm run dev" va porni si va astepta sarcini.`
+      `My HerOS — configurare reusita!\nAgentul tau "${agentName}" este pregatit. La "npm run dev" va porni si va astepta sarcini.`
     );
 
     if (sent) {
@@ -281,14 +281,14 @@ async function stepTelegram(agentDir: string, agentName: string): Promise<void> 
 async function stepLaunchd(): Promise<void> {
   header('Pasul 4 / 5 — Pornire automată la login (recomandat)');
   line();
-  print('  Nova Cortex poate porni automat când deschizi Mac-ul,');
+  print('  My HerOS poate porni automat când deschizi Mac-ul,');
   print('  fără să dai niciodată "npm run dev" manual.\n');
 
   const wants = await ask('  Instalezi serviciul de fundal? (da/nu) [da]: ');
 
   if (wants.toLowerCase().startsWith('n')) {
     warn('Sărit. Pornești manual cu "npm run dev" de fiecare dată.');
-    print(`  ${C.dim}Instalezi mai târziu cu: npm run nova -- service install${C.reset}`);
+    print(`  ${C.dim}Instalezi mai târziu cu: npm run myheros -- service install${C.reset}`);
     return;
   }
 
@@ -297,7 +297,7 @@ async function stepLaunchd(): Promise<void> {
     await cmdServiceInstall();
   } catch (e: any) {
     err(`Eroare la instalare: ${e.message}`);
-    warn('Poți instala manual mai târziu: npm run nova -- service install');
+    warn('Poți instala manual mai târziu: npm run myheros -- service install');
   }
 }
 
@@ -307,22 +307,22 @@ async function stepFinish(agentName: string): Promise<void> {
   line();
 
   ok(`Agentul "${agentName}" este configurat.`);
-  ok('Nova Cortex este instalat și pornit.');
+  ok('My HerOS este instalat și pornit.');
   print('');
   print(`  ${C.bold}Dashboard (deschide în browser):${C.reset}`);
   print(`    http://localhost:4242`);
   print('');
   print(`  ${C.bold}Comenzi utile:${C.reset}`);
-  print(`    npm run nova -- status`);
-  print(`    npm run nova -- doctor`);
-  print(`    npm run nova -- bus ${agentName} "Salut, prezintă-te!"`);
+  print(`    npm run myheros -- status`);
+  print(`    npm run myheros -- doctor`);
+  print(`    npm run myheros -- bus ${agentName} "Salut, prezintă-te!"`);
   print('');
   print(`  ${C.bold}Dacă ai instalat serviciul:${C.reset}`);
   print(`    Daemonul pornește automat la fiecare login.`);
   print(`    Nu mai dai niciodata "npm run dev".`);
   print('');
   line();
-  print(`  ${C.dim}GitHub: github.com/danutmitrut/nova-cortex${C.reset}`);
+  print(`  ${C.dim}GitHub: github.com/danutmitrut/my-heros${C.reset}`);
   print('');
 }
 

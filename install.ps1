@@ -1,6 +1,6 @@
 # ============================================================
-# Nova Cortex — Installer pentru Windows
-# Utilizare: iex (irm https://raw.githubusercontent.com/danutmitrut/nova-cortex/main/install.ps1)
+# My HerOS — Installer pentru Windows
+# Utilizare: iex (irm https://raw.githubusercontent.com/danutmitrut/my-heros/main/install.ps1)
 # Sau local: powershell -ExecutionPolicy Bypass -File install.ps1
 # ============================================================
 
@@ -12,7 +12,7 @@ function warn { param($s) Write-Host "  [!]  $s" -ForegroundColor Yellow }
 function fail { param($s) Write-Host "  [X]  $s" -ForegroundColor Red; exit 1 }
 
 Write-Host ""
-Write-Host "  Nova Cortex Installer" -ForegroundColor Green
+Write-Host "  My HerOS Installer" -ForegroundColor Green
 Write-Host "  ---------------------"
 Write-Host ""
 
@@ -37,15 +37,15 @@ try {
 }
 
 # ── Clone / actualizare repo ─────────────────────────────────
-$InstallDir = "$env:USERPROFILE\nova-cortex"
+$InstallDir = "$env:USERPROFILE\my-heros"
 
 if (Test-Path "$InstallDir\.git") {
-  warn "Nova Cortex există deja în $InstallDir — actualizez..."
+  warn "My HerOS există deja în $InstallDir — actualizez..."
   git -C $InstallDir pull --ff-only
 } else {
   Write-Host ""
-  Write-Host "  Clonez Nova Cortex in $InstallDir..."
-  git clone https://github.com/danutmitrut/nova-cortex.git $InstallDir
+  Write-Host "  Clonez My HerOS in $InstallDir..."
+  git clone https://github.com/danutmitrut/my-heros.git $InstallDir
 }
 ok "Repo: $InstallDir"
 
@@ -64,12 +64,12 @@ if ($claudeExists) {
   ok "Claude CLI instalat"
 }
 
-# ── Comandă nova în PATH ──────────────────────────────────────
-$novaBat = "$InstallDir\nova.bat"
+# ── Comandă myheros în PATH ──────────────────────────────────────
+$novaBat = "$InstallDir\myheros.bat"
 @"
 @echo off
 cd /d "$InstallDir"
-node --experimental-strip-types src\nova.ts %*
+node --experimental-strip-types src\myheros.ts %*
 "@ | Set-Content -Path $novaBat -Encoding ASCII
 
 # Adaugă InstallDir în PATH pentru sesiunea curentă și permanent
@@ -77,9 +77,9 @@ $userPath = [Environment]::GetEnvironmentVariable("PATH", "User")
 if ($userPath -notlike "*$InstallDir*") {
   [Environment]::SetEnvironmentVariable("PATH", "$userPath;$InstallDir", "User")
   $env:PATH += ";$InstallDir"
-  ok "nova.bat adaugat in PATH"
+  ok "myheros.bat adaugat in PATH"
 } else {
-  ok "nova.bat deja in PATH"
+  ok "myheros.bat deja in PATH"
 }
 
 # ── Wizard ───────────────────────────────────────────────────
@@ -90,4 +90,4 @@ Write-Host "  Pornind wizard-ul de configurare..."
 Write-Host ""
 Start-Sleep -Seconds 1
 
-node --experimental-strip-types "$InstallDir\src\nova.ts" setup
+node --experimental-strip-types "$InstallDir\src\myheros.ts" setup

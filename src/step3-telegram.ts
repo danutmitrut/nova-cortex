@@ -27,7 +27,7 @@ const config = JSON.parse(readFileSync(join(agentDir, 'config.json'), 'utf-8'));
 // .env este gitignored — secretele nu ajung în repo
 const envPath = join(agentDir, '.env');
 if (!existsSync(envPath)) {
-  console.error(`[nova-cortex] Lipsește ${envPath}`);
+  console.error(`[my-heros] Lipsește ${envPath}`);
   console.error('Creează fișierul cu:\n  BOT_TOKEN=token_de_la_botfather\n  CHAT_ID=id_ul_tău_telegram');
   process.exit(1);
 }
@@ -45,11 +45,11 @@ for (const line of readFileSync(envPath, 'utf-8').split('\n')) {
 
 const { BOT_TOKEN, CHAT_ID } = envVars;
 if (!BOT_TOKEN || !CHAT_ID) {
-  console.error('[nova-cortex] BOT_TOKEN și CHAT_ID sunt obligatorii în .env');
+  console.error('[my-heros] BOT_TOKEN și CHAT_ID sunt obligatorii în .env');
   process.exit(1);
 }
 
-console.log(`[nova-cortex] Pornesc agentul: ${config.name}`);
+console.log(`[my-heros] Pornesc agentul: ${config.name}`);
 
 // ── 3. Citim IDENTITY.md ─────────────────────────────────────
 const identityPath = join(agentDir, 'IDENTITY.md');
@@ -78,7 +78,7 @@ const agent = pty.spawn(claudeCommand, [
   } as Record<string, string>,
 });
 
-console.log(`[nova-cortex] Agent "${config.name}" pornit cu PID: ${agent.pid}`);
+console.log(`[my-heros] Agent "${config.name}" pornit cu PID: ${agent.pid}`);
 
 // ── 5. Afișăm output-ul PTY ──────────────────────────────────
 agent.onData((data) => {
@@ -100,7 +100,7 @@ function injectMessage(text: string): void {
 // Așteptăm 12s să termine Claude boot-ul înainte să primim mesaje
 setTimeout(() => {
   const poller = new TelegramPoller(BOT_TOKEN, (text, chatId) => {
-    console.log(`\n[nova-cortex] Injectez în PTY: "${text}"`);
+    console.log(`\n[my-heros] Injectez în PTY: "${text}"`);
 
     // Formatăm mesajul ca instrucțiune clară pentru Claude
     // Claude știe din IDENTITY.md că trebuie să răspundă pe Telegram
@@ -120,6 +120,6 @@ setTimeout(() => {
 
 // ── 9. Detectăm închiderea agentului ─────────────────────────
 agent.onExit(({ exitCode }) => {
-  console.log(`\n[nova-cortex] Agent "${config.name}" închis (cod: ${exitCode})`);
+  console.log(`\n[my-heros] Agent "${config.name}" închis (cod: ${exitCode})`);
   process.exit(exitCode);
 });

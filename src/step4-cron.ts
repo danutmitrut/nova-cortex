@@ -28,7 +28,7 @@ const config = JSON.parse(readFileSync(join(agentDir, 'config.json'), 'utf-8'));
 // ── 2. Citim .env ────────────────────────────────────────────
 const envPath = join(agentDir, '.env');
 if (!existsSync(envPath)) {
-  console.error(`[nova-cortex] Lipsește ${envPath}`);
+  console.error(`[my-heros] Lipsește ${envPath}`);
   process.exit(1);
 }
 
@@ -42,7 +42,7 @@ for (const line of readFileSync(envPath, 'utf-8').split('\n')) {
 
 const { BOT_TOKEN, CHAT_ID } = envVars;
 if (!BOT_TOKEN || !CHAT_ID) {
-  console.error('[nova-cortex] BOT_TOKEN și CHAT_ID sunt obligatorii în .env');
+  console.error('[my-heros] BOT_TOKEN și CHAT_ID sunt obligatorii în .env');
   process.exit(1);
 }
 
@@ -72,7 +72,7 @@ const agent = pty.spawn(claudeCommand, [
   } as Record<string, string>,
 });
 
-console.log(`[nova-cortex] Agent "${config.name}" pornit cu PID: ${agent.pid}`);
+console.log(`[my-heros] Agent "${config.name}" pornit cu PID: ${agent.pid}`);
 agent.onData((data) => process.stdout.write(data));
 
 // ── 5. Funcția de injecție (refolosită în cron + telegram) ───
@@ -126,6 +126,6 @@ setTimeout(() => {
 }, 12000);
 
 agent.onExit(({ exitCode }) => {
-  console.log(`\n[nova-cortex] Agent "${config.name}" închis (cod: ${exitCode})`);
+  console.log(`\n[my-heros] Agent "${config.name}" închis (cod: ${exitCode})`);
   process.exit(exitCode);
 });

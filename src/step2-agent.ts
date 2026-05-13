@@ -25,7 +25,7 @@ const agentDir = resolve('./agents/demo');
 
 // config.json conține ce are nevoie daemonul să știe despre agent
 const config = JSON.parse(readFileSync(join(agentDir, 'config.json'), 'utf-8'));
-console.log(`[nova-cortex] Pornesc agentul: ${config.name}`);
+console.log(`[my-heros] Pornesc agentul: ${config.name}`);
 
 // ── 2. Citim IDENTITY.md ─────────────────────────────────────
 // IDENTITY.md extinde system prompt-ul cu personalitatea agentului
@@ -62,7 +62,7 @@ const agent = pty.spawn(claudeCommand, args, {
   } as Record<string, string>,
 });
 
-console.log(`[nova-cortex] Agent "${config.name}" pornit cu PID: ${agent.pid}`);
+console.log(`[my-heros] Agent "${config.name}" pornit cu PID: ${agent.pid}`);
 
 // ── 5. Afișăm output-ul ──────────────────────────────────────
 agent.onData((data) => {
@@ -75,6 +75,6 @@ setTimeout(() => agent.write('\r'), 8000);
 
 // ── 7. Detectăm închiderea ───────────────────────────────────
 agent.onExit(({ exitCode }) => {
-  console.log(`\n[nova-cortex] Agent "${config.name}" închis (cod: ${exitCode})`);
+  console.log(`\n[my-heros] Agent "${config.name}" închis (cod: ${exitCode})`);
   process.exit(exitCode);
 });

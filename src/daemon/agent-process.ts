@@ -118,7 +118,7 @@ export class AgentProcess {
 
     const agentStateDir = resolve(this.stateDir, this.name);
     const hooksDir = resolve(new URL('../../src/hooks', import.meta.url).pathname);
-    const novaCmd = resolve(new URL('../../src/nova.ts', import.meta.url).pathname);
+    const myherosCmd = resolve(new URL('../../src/myheros.ts', import.meta.url).pathname);
 
     this.ptyProcess = pty.spawn(claudeCmd, args, {
       name: 'xterm-256color',
@@ -132,7 +132,7 @@ export class AgentProcess {
         NC_AGENT_NAME: this.name,
         NC_STATE_DIR: agentStateDir,
         NC_HOOKS_DIR: hooksDir,
-        NC_NOVA_CMD: novaCmd,
+        NC_MYHEROS_CMD: myherosCmd,
       } as Record<string, string>,
     });
 
@@ -362,7 +362,7 @@ REPORT_EOF
 
       // Mesaj de bun venit la fiecare boot al agentului
       sendTelegramMessage(BOT_TOKEN, CHAT_ID,
-        `Nova Cortex — agentul "${this.name}" este activ si asteapta sarcini.`
+        `My HerOS — agentul "${this.name}" este activ si asteapta sarcini.`
       ).then(sent => {
         if (sent) console.log(`[${this.name}] Mesaj de bun venit trimis pe Telegram.`);
       });

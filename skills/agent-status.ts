@@ -11,7 +11,7 @@ import { join, resolve } from 'path';
 import { createConnection } from 'net';
 import { platform } from 'os';
 
-const SOCKET = platform() === 'win32' ? undefined : '/tmp/nova-cortex.sock';
+const SOCKET = platform() === 'win32' ? undefined : '/tmp/my-heros.sock';
 const TCP_PORT = 7654;
 
 function fromHeartbeats(): object[] {

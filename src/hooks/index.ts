@@ -1,5 +1,5 @@
 // ============================================================
-// Hooks — utilitare comune pentru toate hook-urile Nova Cortex
+// Hooks — utilitare comune pentru toate hook-urile My HerOS
 // ============================================================
 
 import { readFileSync, existsSync, writeFileSync, unlinkSync, mkdirSync, watch } from 'fs';

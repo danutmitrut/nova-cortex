@@ -1,4 +1,4 @@
-# Nova Cortex
+# My HerOS
 
 Sistem multi-agent AI care rulează local pe Mac sau Windows.
 Pornești mai mulți agenți Claude Code care colaborează între ei, primesc sarcini prin Telegram și se coordonează automat.
@@ -27,8 +27,8 @@ claude --version # trebuie să existe
 ## Instalare
 
 ```bash
-git clone https://github.com/danutmitrut/nova-cortex
-cd nova-cortex
+git clone https://github.com/danutmitrut/my-heros
+cd my-heros
 npm install
 npm run setup
 ```
@@ -43,7 +43,7 @@ La final deschizi `http://localhost:4242` și sistemul e activ.
 
 ## Structura agenților
 
-Nova Cortex vine cu trei agenți predefiniti:
+My HerOS vine cu trei agenți predefiniti:
 
 | Agent | Rol |
 |-------|-----|
@@ -59,13 +59,13 @@ Adaugi agenți proprii în `agents/<nume>/` cu trei fișiere:
 ## Comenzi CLI
 
 ```bash
-npm run nova -- status                          # statusul tuturor agenților
-npm run nova -- doctor                          # diagnostic complet
-npm run nova -- bus orchestrator "sarcina ta"   # trimite mesaj unui agent
-npm run nova -- start analyst                   # pornește un agent oprit
-npm run nova -- stop demo                       # oprește un agent
-npm run nova -- service install                 # instalează pornire automată (macOS)
-npm run nova -- service uninstall               # dezinstalează serviciul
+npm run myheros -- status                          # statusul tuturor agenților
+npm run myheros -- doctor                          # diagnostic complet
+npm run myheros -- bus orchestrator "sarcina ta"   # trimite mesaj unui agent
+npm run myheros -- start analyst                   # pornește un agent oprit
+npm run myheros -- stop demo                       # oprește un agent
+npm run myheros -- service install                 # instalează pornire automată (macOS)
+npm run myheros -- service uninstall               # dezinstalează serviciul
 ```
 
 ## Dashboard
@@ -132,7 +132,7 @@ Agenții salvează automat ce au făcut la fiecare oprire în `state/<agent>/MEM
 ## Structura proiectului
 
 ```
-nova-cortex/
+my-heros/
 ├── agents/          # un director per agent
 │   ├── orchestrator/
 │   ├── analyst/
@@ -146,7 +146,7 @@ nova-cortex/
 │   ├── rag/         # căutare în knowledge base
 │   ├── security/    # scanner pre-boot
 │   ├── dashboard/   # server HTTP + UI
-│   ├── cli/         # comenzi nova
+│   ├── cli/         # comenzi myheros
 │   └── onboarding/  # wizard npm run setup
 ├── state/           # stare persistentă (crons, memorie)
 └── bus/             # mesaje inter-agent (runtime)
@@ -155,7 +155,7 @@ nova-cortex/
 ## Depanare
 
 ```bash
-npm run nova -- doctor   # verifică tot: Node, Claude, daemon, Telegram, launchd
+npm run myheros -- doctor   # verifică tot: Node, Claude, daemon, Telegram, launchd
 ```
 
 Erori frecvente:
@@ -166,4 +166,4 @@ Erori frecvente:
 
 **Telegram nu funcționează** — verifică că `agents/<agent>/.env` există cu `BOT_TOKEN` și `CHAT_ID` valide
 
-**Dashboard gol** — daemonul nu rulează; dacă ai serviciul instalat: `npm run nova -- service status`
+**Dashboard gol** — daemonul nu rulează; dacă ai serviciul instalat: `npm run myheros -- service status`

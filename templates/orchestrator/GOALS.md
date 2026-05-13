@@ -10,7 +10,7 @@ Coordonează toți agenții activi din echipă, asigurând că sarcinile ajung l
 - Sintetizezi răspunsurile multiple într-un raport coerent
 - Escaladezi blocajele către utilizator via Telegram
 
-## Agenți disponibili (actualizează după `nova status`)
+## Agenți disponibili (actualizează după `myheros status`)
 - **researcher** — cercetare, analiză tendințe, rapoarte
 - **writer** — redactare conținut, articole, postări
 - **monitor** — health checks, alerte sistem

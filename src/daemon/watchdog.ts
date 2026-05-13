@@ -57,7 +57,7 @@ export class Watchdog {
     if (this.crashCount > MAX_CRASHES) {
       console.error(
         `[watchdog:${this.agent.name}] ${MAX_CRASHES} crash-uri consecutive — renunț. ` +
-        `Verifică logurile și repornește manual cu: nova start ${this.agent.name}`
+        `Verifică logurile și repornește manual cu: myheros start ${this.agent.name}`
       );
       return;
     }

@@ -1,9 +1,9 @@
 // ============================================================
 // Service — gestionează serviciul launchd pe macOS
 // ============================================================
-// nova service install   → creează plist + încarcă cu launchctl
-// nova service uninstall → descarcă + șterge plist
-// nova service status    → verifică dacă rulează
+// myheros service install   → creează plist + încarcă cu launchctl
+// myheros service uninstall → descarcă + șterge plist
+// myheros service status    → verifică dacă rulează
 //
 // Pe Windows: afișează instrucțiuni manuale (Task Scheduler).
 // Pe Linux:   afișează instrucțiuni pentru systemd.
@@ -14,7 +14,7 @@ import { writeFileSync, unlinkSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { homedir, platform } from 'os';
 
-const LABEL = 'com.novacortex.daemon';
+const LABEL = 'com.myheros.daemon';
 const PLIST_DIR = join(homedir(), 'Library', 'LaunchAgents');
 const PLIST_PATH = join(PLIST_DIR, `${LABEL}.plist`);
 
@@ -75,12 +75,12 @@ export async function cmdServiceInstall(): Promise<void> {
     process.exit(1);
   }
 
-  console.log('\nServiciul Nova Cortex a fost instalat.');
+  console.log('\nServiciul My HerOS a fost instalat.');
   console.log('Daemonul pornește automat la login și se repornește dacă crashează.');
   console.log('\nLog-uri:');
   console.log(`  Stdout: ${logsDir}/daemon.log`);
   console.log(`  Stderr: ${logsDir}/daemon-error.log`);
-  console.log('\nPentru a dezinstala: nova service uninstall');
+  console.log('\nPentru a dezinstala: myheros service uninstall');
 }
 
 export async function cmdServiceUninstall(): Promise<void> {
@@ -110,7 +110,7 @@ export function cmdServiceStatus(): void {
   const installed = existsSync(PLIST_PATH);
   console.log(`\nServiciu launchd: ${installed ? 'instalat' : 'neinstalat'}`);
   if (!installed) {
-    console.log('Rulează "nova service install" pentru instalare.');
+    console.log('Rulează "myheros service install" pentru instalare.');
     return;
   }
 
@@ -128,7 +128,7 @@ export function cmdServiceStatus(): void {
 }
 
 // ── Windows Task Scheduler ───────────────────────────────────
-const WIN_TASK = 'NovaCortex';
+const WIN_TASK = 'MyHerOS';
 
 function installWindows(): void {
   const projectDir = process.cwd();
@@ -139,7 +139,7 @@ function installWindows(): void {
   mkdirSync(logsDir, { recursive: true });
 
   // Wrapper VBScript — pornește node fără fereastră consolă
-  const vbsPath = join(projectDir, 'nova-daemon.vbs');
+  const vbsPath = join(projectDir, 'myheros-daemon.vbs');
   writeFileSync(vbsPath,
     `Set WshShell = CreateObject("WScript.Shell")\r\n` +
     `WshShell.Run """${nodeExec}"" --experimental-strip-types ""${entryPoint}""", 0, False\r\n`
@@ -165,7 +165,7 @@ function installWindows(): void {
   console.log('Daemonul va porni automat la următorul login.');
   console.log('\nPornire imediată (fără restart):');
   console.log(`  schtasks /run /tn ${WIN_TASK}`);
-  console.log('\nPentru a dezinstala: nova service uninstall');
+  console.log('\nPentru a dezinstala: myheros service uninstall');
 }
 
 function uninstallWindows(): void {
@@ -185,7 +185,7 @@ function uninstallWindows(): void {
 function statusWindows(): void {
   const r = spawnSync('schtasks', ['/query', '/tn', WIN_TASK, '/fo', 'LIST'], { stdio: 'pipe', shell: true });
   if (r.status !== 0) {
-    console.log(`Task "${WIN_TASK}": neinstalat. Rulează "nova service install".`);
+    console.log(`Task "${WIN_TASK}": neinstalat. Rulează "myheros service install".`);
     return;
   }
   const lines = r.stdout.toString().split('\n').filter(l => /Status|Task To Run|Next Run/i.test(l));
@@ -198,9 +198,9 @@ function printNonMacInstructions(): void {
   console.log(`
 Linux — serviciu systemd (user):
   mkdir -p ~/.config/systemd/user/
-  cat > ~/.config/systemd/user/nova-cortex.service << EOF
+  cat > ~/.config/systemd/user/my-heros.service << EOF
   [Unit]
-  Description=Nova Cortex Daemon
+  Description=My HerOS Daemon
 
   [Service]
   ExecStart=${process.execPath} --experimental-strip-types ${join(process.cwd(), 'src/index.ts')}
@@ -211,6 +211,6 @@ Linux — serviciu systemd (user):
   WantedBy=default.target
   EOF
 
-  systemctl --user enable --now nova-cortex
+  systemctl --user enable --now my-heros
 `);
 }

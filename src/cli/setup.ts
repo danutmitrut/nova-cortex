@@ -1,5 +1,5 @@
 // ============================================================
-// nova setup — wizard interactiv de onboarding
+// myheros setup — wizard interactiv de onboarding
 // ============================================================
 // Funcționează cross-platform (Mac / Windows / Linux).
 // Folosește doar readline din stdlib Node.js.
@@ -35,9 +35,9 @@ const askYN = async (q: string, def = 'y'): Promise<boolean> => {
 export async function cmdSetup(): Promise<void> {
   console.clear();
   console.log(`${BOLD}${GREEN}
-  ⬡  Nova Cortex — Setup Wizard
+  ⬡  My HerOS — Setup Wizard
   ────────────────────────────${RESET}
-  Acest wizard configurează Nova Cortex pas cu pas.
+  Acest wizard configurează My HerOS pas cu pas.
   Apasă Enter pentru opțiunea implicită (în paranteze).
 `);
 
@@ -132,19 +132,19 @@ export async function cmdSetup(): Promise<void> {
 
   const os = platform();
   if (os === 'darwin') {
-    const wantService = await askYN('Instalezi Nova Cortex ca serviciu launchd (pornire automată)?');
+    const wantService = await askYN('Instalezi My HerOS ca serviciu launchd (pornire automată)?');
     if (wantService) {
       const { cmdServiceInstall } = await import('./service.ts');
       await cmdServiceInstall();
     }
   } else if (os === 'win32') {
-    const wantService = await askYN('Instalezi Nova Cortex ca task în Task Scheduler (pornire automată)?');
+    const wantService = await askYN('Instalezi My HerOS ca task în Task Scheduler (pornire automată)?');
     if (wantService) {
       const { cmdServiceInstall } = await import('./service.ts');
       await cmdServiceInstall();
     }
   } else {
-    warn(`Linux detectat. Rulează "nova service install" pentru systemd.`);
+    warn(`Linux detectat. Rulează "myheros service install" pentru systemd.`);
   }
 
   // ── STEP 5: Diagnostic final ─────────────────────────────────
@@ -156,15 +156,15 @@ export async function cmdSetup(): Promise<void> {
 
   // ── Done ─────────────────────────────────────────────────────
   console.log(`${GREEN}${BOLD}
-  ✓ Nova Cortex configurat cu succes!
+  ✓ My HerOS configurat cu succes!
   ─────────────────────────────────${RESET}
 
   Comenzi utile:
     ${BOLD}npm run dev${RESET}              — pornește daemonul (terminal dedicat)
-    ${BOLD}nova status${RESET}              — statusul agenților
-    ${BOLD}nova logs <agent>${RESET}        — output live al unui agent
-    ${BOLD}nova chat <agent> "..."${RESET}  — trimite mesaj și urmărești răspunsul
-    ${BOLD}nova doctor${RESET}              — diagnostic complet
+    ${BOLD}myheros status${RESET}              — statusul agenților
+    ${BOLD}myheros logs <agent>${RESET}        — output live al unui agent
+    ${BOLD}myheros chat <agent> "..."${RESET}  — trimite mesaj și urmărești răspunsul
+    ${BOLD}myheros doctor${RESET}              — diagnostic complet
 
   Dashboard: ${BOLD}http://localhost:4242${RESET} (după pornirea daemonului)
 `);

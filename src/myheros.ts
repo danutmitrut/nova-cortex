@@ -1,8 +1,8 @@
 // ============================================================
-// Nova Cortex CLI — entry point
+// My HerOS CLI — entry point
 // ============================================================
-// Rulare: node --experimental-strip-types src/nova.ts <cmd>
-// Sau: npm run nova -- <cmd>
+// Rulare: node --experimental-strip-types src/myheros.ts <cmd>
+// Sau: npm run myheros -- <cmd>
 //
 // Comenzi: status | start | stop | bus
 // ============================================================
@@ -75,7 +75,7 @@ async function main() {
         case 'install':   await cmdServiceInstall(); break;
         case 'uninstall': await cmdServiceUninstall(); break;
         case 'status':    cmdServiceStatus(); break;
-        default: console.error('Utilizare: nova service install|uninstall|status'); process.exit(1);
+        default: console.error('Utilizare: myheros service install|uninstall|status'); process.exit(1);
       }
       break;
     case 'help':
@@ -85,7 +85,7 @@ async function main() {
       cmdHelp();
       break;
     default:
-      console.error(`Comandă necunoscută: "${command}". Încearcă "nova help".`);
+      console.error(`Comandă necunoscută: "${command}". Încearcă "myheros help".`);
       process.exit(1);
   }
 }

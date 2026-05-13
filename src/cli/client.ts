@@ -8,7 +8,7 @@
 import { createConnection } from 'net';
 import { platform } from 'os';
 
-const SOCKET_PATH = '/tmp/nova-cortex.sock';
+const SOCKET_PATH = '/tmp/my-heros.sock';
 const TCP_PORT = 7654;
 const TIMEOUT_MS = 5_000;
 

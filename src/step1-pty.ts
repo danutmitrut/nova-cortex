@@ -38,7 +38,7 @@ const agent = pty.spawn(claudeCommand, [
   } as Record<string, string>,
 });
 
-console.log(`[nova-cortex] Agent pornit cu PID: ${agent.pid}`);
+console.log(`[my-heros] Agent pornit cu PID: ${agent.pid}`);
 
 // ── 3. Capturăm tot ce scrie Claude ─────────────────────────
 // onData se declanșează de fiecare dată când Claude scrie ceva în terminal
@@ -62,11 +62,11 @@ setTimeout(() => {
   agent.write('\x1b[200~' + mesaj + '\x1b[201~'); // lipim mesajul
   setTimeout(() => agent.write('\r'), 300);        // apăsăm Enter după 300ms
 
-  console.log(`\n[nova-cortex] Mesaj injectat: "${mesaj}"`);
+  console.log(`\n[my-heros] Mesaj injectat: "${mesaj}"`);
 }, 12000);
 
 // ── 6. Detectăm când Claude se închide ───────────────────────
 agent.onExit(({ exitCode }) => {
-  console.log(`\n[nova-cortex] Agent închis cu codul: ${exitCode}`);
+  console.log(`\n[my-heros] Agent închis cu codul: ${exitCode}`);
   process.exit(exitCode);
 });

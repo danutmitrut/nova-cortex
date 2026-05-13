@@ -1,6 +1,6 @@
 # Agent: orchestrator
 
-Ești orchestratorul echipei Nova Cortex. Coordonezi agenți specializați prin sistemul de bus.
+Ești orchestratorul echipei My HerOS. Coordonezi agenți specializați prin sistemul de bus.
 
 ## Cum trimiți mesaje altor agenți (bus)
 
@@ -22,7 +22,7 @@ Exemplu: `2026-05-12T08-00-00-abc12345.json`
 
 ### Alternativă rapidă via CLI
 ```bash
-nova bus <agent> "<mesaj>"
+myheros bus <agent> "<mesaj>"
 ```
 
 ## Cum primești răspunsuri
@@ -54,8 +54,8 @@ node --experimental-strip-types skills/agent-status.ts
 ## Verificare agenți activi (CLI)
 
 ```bash
-nova status
-nova heartbeats
+myheros status
+myheros heartbeats
 ```
 
 ## Escaladare

@@ -25,7 +25,7 @@ import type { Daemon } from './daemon.ts';
 // Pe Windows nu există Unix sockets — folosim TCP pe localhost
 const SOCKET_PATH = platform() === 'win32'
   ? undefined
-  : join('/tmp', 'nova-cortex.sock');
+  : join('/tmp', 'my-heros.sock');
 
 const TCP_PORT = 7654; // folosit doar pe Windows
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Nova Cortex — Installer pentru Mac / Linux
+# My HerOS — Installer pentru Mac / Linux
 # Utilizare: bash install.sh
 # ============================================================
 set -e
@@ -15,7 +15,7 @@ warn() { echo -e "  ${YELLOW}!${NC} $1"; }
 fail() { echo -e "  ${RED}✗${NC} $1"; exit 1; }
 
 echo ""
-echo "  ⬡  Nova Cortex Installer"
+echo "  ⬡  My HerOS Installer"
 echo "  ────────────────────────"
 echo ""
 
@@ -36,15 +36,15 @@ fi
 ok "Git $(git --version | awk '{print $3}')"
 
 # ── Clone / actualizare repo ─────────────────────────────────
-INSTALL_DIR="$HOME/nova-cortex"
+INSTALL_DIR="$HOME/my-heros"
 
 if [ -d "$INSTALL_DIR/.git" ]; then
-  warn "Nova Cortex există deja în $INSTALL_DIR — actualizez..."
+  warn "My HerOS există deja în $INSTALL_DIR — actualizez..."
   git -C "$INSTALL_DIR" pull --ff-only
 else
   echo ""
-  echo "  Clonez Nova Cortex în $INSTALL_DIR..."
-  git clone https://github.com/danutmitrut/nova-cortex.git "$INSTALL_DIR"
+  echo "  Clonez My HerOS în $INSTALL_DIR..."
+  git clone https://github.com/danutmitrut/my-heros.git "$INSTALL_DIR"
 fi
 ok "Repo: $INSTALL_DIR"
 
@@ -62,27 +62,27 @@ else
   ok "Claude CLI instalat"
 fi
 
-# ── CLI global (nova) ─────────────────────────────────────────
+# ── CLI global (myheros) ─────────────────────────────────────────
 BIN_DIR="/usr/local/bin"
-NOVA_SCRIPT="$BIN_DIR/nova"
+NOVA_SCRIPT="$BIN_DIR/myheros"
 
-cat > /tmp/nova-installer-script << 'NOVASCRIPT'
+cat > /tmp/myheros-installer-script << 'NOVASCRIPT'
 #!/usr/bin/env bash
-cd "INSTALL_PLACEHOLDER" && node --experimental-strip-types src/nova.ts "$@"
+cd "INSTALL_PLACEHOLDER" && node --experimental-strip-types src/myheros.ts "$@"
 NOVASCRIPT
 
-sed -i.bak "s|INSTALL_PLACEHOLDER|$INSTALL_DIR|g" /tmp/nova-installer-script
-rm /tmp/nova-installer-script.bak
+sed -i.bak "s|INSTALL_PLACEHOLDER|$INSTALL_DIR|g" /tmp/myheros-installer-script
+rm /tmp/myheros-installer-script.bak
 
 if [ -w "$BIN_DIR" ]; then
-  cp /tmp/nova-installer-script "$NOVA_SCRIPT"
+  cp /tmp/myheros-installer-script "$NOVA_SCRIPT"
   chmod +x "$NOVA_SCRIPT"
-  ok "Comandă 'nova' disponibilă global"
+  ok "Comandă 'myheros' disponibilă global"
 else
   warn "Nu pot scrie în $BIN_DIR — încerc cu sudo..."
-  sudo cp /tmp/nova-installer-script "$NOVA_SCRIPT"
+  sudo cp /tmp/myheros-installer-script "$NOVA_SCRIPT"
   sudo chmod +x "$NOVA_SCRIPT"
-  ok "Comandă 'nova' disponibilă global (via sudo)"
+  ok "Comandă 'myheros' disponibilă global (via sudo)"
 fi
 
 # ── Wizard ───────────────────────────────────────────────────
@@ -93,4 +93,4 @@ echo "  Pornind wizard-ul de configurare..."
 echo ""
 sleep 1
 
-nova setup
+myheros setup

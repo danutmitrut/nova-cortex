@@ -1,5 +1,5 @@
 // ============================================================
-// Comenzi CLI Nova Cortex
+// Comenzi CLI My HerOS
 // ============================================================
 // status  — listează toți agenții și statusul lor
 // start   — pornește un agent specific
@@ -16,16 +16,16 @@ import { homedir, platform } from 'os';
 
 type AgentStatus = { name: string; status: string; alive: boolean };
 
-// ── nova status ───────────────────────────────────────────────
+// ── myheros status ───────────────────────────────────────────────
 export async function cmdStatus(): Promise<void> {
   const response = await sendCommand({ command: 'status' }) as { ok: boolean; agents: AgentStatus[] };
 
   if (!response.agents?.length) {
-    console.log('Nova Cortex — niciun agent activ.');
+    console.log('My HerOS — niciun agent activ.');
     return;
   }
 
-  console.log('\nNova Cortex — Agenți activi:\n');
+  console.log('\nMy HerOS — Agenți activi:\n');
   console.log('  AGENT          STATUS       ALIVE');
   console.log('  ─────────────────────────────────');
 
@@ -39,10 +39,10 @@ export async function cmdStatus(): Promise<void> {
   console.log();
 }
 
-// ── nova start <agent> ────────────────────────────────────────
+// ── myheros start <agent> ────────────────────────────────────────
 export async function cmdStart(name: string): Promise<void> {
   if (!name) {
-    console.error('Utilizare: nova start <nume-agent>');
+    console.error('Utilizare: myheros start <nume-agent>');
     process.exit(1);
   }
 
@@ -56,10 +56,10 @@ export async function cmdStart(name: string): Promise<void> {
   }
 }
 
-// ── nova stop <agent> ─────────────────────────────────────────
+// ── myheros stop <agent> ─────────────────────────────────────────
 export async function cmdStop(name: string): Promise<void> {
   if (!name) {
-    console.error('Utilizare: nova stop <nume-agent>');
+    console.error('Utilizare: myheros stop <nume-agent>');
     process.exit(1);
   }
 
@@ -73,10 +73,10 @@ export async function cmdStop(name: string): Promise<void> {
   }
 }
 
-// ── nova bus <agent> <mesaj> ──────────────────────────────────
+// ── myheros bus <agent> <mesaj> ──────────────────────────────────
 export async function cmdBus(to: string, content: string): Promise<void> {
   if (!to || !content) {
-    console.error('Utilizare: nova bus <agent> "<mesaj>"');
+    console.error('Utilizare: myheros bus <agent> "<mesaj>"');
     process.exit(1);
   }
 
@@ -107,13 +107,13 @@ export async function cmdBus(to: string, content: string): Promise<void> {
   console.log(`Mesaj trimis la "${to}" (id: ${id.slice(0, 8)}...)`);
 }
 
-// ── nova doctor ───────────────────────────────────────────────
+// ── myheros doctor ───────────────────────────────────────────────
 export async function cmdDoctor(): Promise<void> {
   const ok  = (msg: string) => console.log(`  \x1b[32m✓\x1b[0m ${msg}`);
   const err = (msg: string) => console.log(`  \x1b[31m✗\x1b[0m ${msg}`);
   const warn= (msg: string) => console.log(`  \x1b[33m!\x1b[0m ${msg}`);
 
-  console.log('\nNova Cortex — Diagnostic\n');
+  console.log('\nMy HerOS — Diagnostic\n');
 
   // Node.js
   const major = parseInt(process.version.slice(1));
@@ -137,7 +137,7 @@ export async function cmdDoctor(): Promise<void> {
     daemonOk = true;
     ok(`Daemon: rulează (${agentList.length} agent/i)`);
   } catch {
-    err('Daemon: oprit — rulează "npm run dev" sau "nova service install"');
+    err('Daemon: oprit — rulează "npm run dev" sau "myheros service install"');
   }
 
   // Agenți
@@ -169,19 +169,19 @@ export async function cmdDoctor(): Promise<void> {
 
   // Serviciu launchd
   if (platform() === 'darwin') {
-    const plist = join(homedir(), 'Library', 'LaunchAgents', 'com.novacortex.daemon.plist');
+    const plist = join(homedir(), 'Library', 'LaunchAgents', 'com.myheros.daemon.plist');
     existsSync(plist)
       ? ok('Serviciu launchd: instalat (pornire automată la login)')
-      : warn('Serviciu launchd: neinstalat — rulează "nova service install"');
+      : warn('Serviciu launchd: neinstalat — rulează "myheros service install"');
   }
 
   console.log();
 }
 
-// ── nova help ─────────────────────────────────────────────────
-// ── nova enable / nova disable ────────────────────────────────
+// ── myheros help ─────────────────────────────────────────────────
+// ── myheros enable / myheros disable ────────────────────────────────
 export async function cmdEnable(name: string): Promise<void> {
-  if (!name) { console.error('Utilizare: nova enable <agent>'); process.exit(1); }
+  if (!name) { console.error('Utilizare: myheros enable <agent>'); process.exit(1); }
   try {
     const r = await sendCommand({ command: 'enable', agent: name }) as { ok: boolean; error?: string };
     if (r.ok) console.log(`Agent "${name}" activat.`);
@@ -196,7 +196,7 @@ export async function cmdEnable(name: string): Promise<void> {
 }
 
 export async function cmdDisable(name: string): Promise<void> {
-  if (!name) { console.error('Utilizare: nova disable <agent>'); process.exit(1); }
+  if (!name) { console.error('Utilizare: myheros disable <agent>'); process.exit(1); }
   try {
     const r = await sendCommand({ command: 'disable', agent: name }) as { ok: boolean; error?: string };
     if (r.ok) console.log(`Agent "${name}" dezactivat.`);
@@ -209,7 +209,7 @@ export async function cmdDisable(name: string): Promise<void> {
   }
 }
 
-// ── nova heartbeats ───────────────────────────────────────────
+// ── myheros heartbeats ───────────────────────────────────────────
 export async function cmdHeartbeats(): Promise<void> {
   try {
     const r = await sendCommand({ command: 'heartbeats' }) as { ok: boolean; heartbeats: any[] };
@@ -229,11 +229,11 @@ export async function cmdHeartbeats(): Promise<void> {
   }
 }
 
-// ── nova community ────────────────────────────────────────────
+// ── myheros community ────────────────────────────────────────────
 export function cmdCommunity(): void {
   const catalogPath = join(resolve(''), 'community', 'catalog.json');
   if (!existsSync(catalogPath)) {
-    console.log('catalog.json nu exista in community/. Ruleaza nova list-templates pentru template-uri locale.');
+    console.log('catalog.json nu exista in community/. Ruleaza myheros list-templates pentru template-uri locale.');
     return;
   }
   try {
@@ -255,15 +255,15 @@ export function cmdCommunity(): void {
       }
     }
     if (!agents.length && !skills.length) console.log('Catalogul e gol.');
-    console.log('\nImporta un agent: nova import <name>\n');
+    console.log('\nImporta un agent: myheros import <name>\n');
   } catch {
     console.error('Eroare la citirea catalog.json.');
   }
 }
 
-// ── nova import <name> ────────────────────────────────────────
+// ── myheros import <name> ────────────────────────────────────────
 export function cmdImport(name: string): void {
-  if (!name) { console.error('Utilizare: nova import <name>'); process.exit(1); }
+  if (!name) { console.error('Utilizare: myheros import <name>'); process.exit(1); }
 
   // Cauta in templates locale
   const templateDir = join(resolve(''), 'templates', name);
@@ -285,11 +285,11 @@ export function cmdImport(name: string): void {
     return;
   }
 
-  console.error(`"${name}" negasit in templates/ sau community/agents/. Ruleaza nova list-templates sau nova community.`);
+  console.error(`"${name}" negasit in templates/ sau community/agents/. Ruleaza myheros list-templates sau myheros community.`);
   process.exit(1);
 }
 
-// ── nova list-templates ───────────────────────────────────────
+// ── myheros list-templates ───────────────────────────────────────
 export function cmdListTemplates(): void {
   const templatesDir = join(resolve(''), 'templates');
   if (!existsSync(templatesDir)) {
@@ -310,12 +310,12 @@ export function cmdListTemplates(): void {
   for (const t of templates) {
     console.log(`  ${t.name.padEnd(15)} ${t.prompt}`);
   }
-  console.log('\nFoloseste: nova add-agent <nume> --template <template>\n');
+  console.log('\nFoloseste: myheros add-agent <nume> --template <template>\n');
 }
 
-// ── nova add-agent <name> [--template <template>] ─────────────
+// ── myheros add-agent <name> [--template <template>] ─────────────
 export function cmdAddAgent(name: string, templateName?: string): void {
-  if (!name) { console.error('Utilizare: nova add-agent <nume> [--template <template>]'); process.exit(1); }
+  if (!name) { console.error('Utilizare: myheros add-agent <nume> [--template <template>]'); process.exit(1); }
 
   const safeName = name.toLowerCase().replace(/[^a-z0-9-_]/g, '-');
   const agentsDir = join(resolve(''), 'agents');
@@ -330,7 +330,7 @@ export function cmdAddAgent(name: string, templateName?: string): void {
     // Copie din template
     const templateDir = join(resolve(''), 'templates', templateName);
     if (!existsSync(templateDir)) {
-      console.error(`Template "${templateName}" negasit. Ruleaza "nova list-templates" pentru lista.`);
+      console.error(`Template "${templateName}" negasit. Ruleaza "myheros list-templates" pentru lista.`);
       process.exit(1);
     }
 
@@ -363,9 +363,9 @@ export function cmdAddAgent(name: string, templateName?: string): void {
   }
 }
 
-// ── nova logs <agent> ─────────────────────────────────────────
+// ── myheros logs <agent> ─────────────────────────────────────────
 export async function cmdLogs(name: string): Promise<void> {
-  if (!name) { console.error('Utilizare: nova logs <agent>'); process.exit(1); }
+  if (!name) { console.error('Utilizare: myheros logs <agent>'); process.exit(1); }
 
   const initial = await sendCommand({ command: 'output', agent: name }) as { ok: boolean; lines?: string[]; error?: string };
   if (!initial.ok) { console.error(`Eroare: ${initial.error ?? 'Agent necunoscut'}`); process.exit(1); }
@@ -374,7 +374,7 @@ export async function cmdLogs(name: string): Promise<void> {
   for (const line of lines) process.stdout.write(line + '\n');
   let lastCount = lines.length;
 
-  process.stderr.write(`\n\x1b[2m[nova logs] "${name}" — Ctrl+C pentru a ieși\x1b[0m\n\n`);
+  process.stderr.write(`\n\x1b[2m[myheros logs] "${name}" — Ctrl+C pentru a ieși\x1b[0m\n\n`);
 
   const timer = setInterval(async () => {
     try {
@@ -391,9 +391,9 @@ export async function cmdLogs(name: string): Promise<void> {
   await new Promise(() => {});
 }
 
-// ── nova report <agent> ───────────────────────────────────────
+// ── myheros report <agent> ───────────────────────────────────────
 export function cmdReport(name: string): void {
-  if (!name) { console.error('Utilizare: nova report <agent>'); process.exit(1); }
+  if (!name) { console.error('Utilizare: myheros report <agent>'); process.exit(1); }
 
   const reportsDir = resolve('./state', name, 'reports');
   if (!existsSync(reportsDir)) {
@@ -419,7 +419,7 @@ export function cmdReport(name: string): void {
   }
 }
 
-// ── nova knowledge list|show|add ──────────────────────────────
+// ── myheros knowledge list|show|add ──────────────────────────────
 export function cmdKnowledge(sub: string, arg?: string): void {
   const knowledgeDir = resolve('./knowledge');
 
@@ -433,18 +433,18 @@ export function cmdKnowledge(sub: string, arg?: string): void {
         const kb = Math.round(statSync(join(knowledgeDir, f)).size / 102.4) / 10;
         console.log(`  ${f.padEnd(32)} ${kb}kb`);
       }
-      console.log('\nFolosește: nova knowledge show <fișier>\n');
+      console.log('\nFolosește: myheros knowledge show <fișier>\n');
       break;
     }
     case 'show': {
-      if (!arg) { console.error('Utilizare: nova knowledge show <fișier>'); process.exit(1); }
+      if (!arg) { console.error('Utilizare: myheros knowledge show <fișier>'); process.exit(1); }
       const p = join(knowledgeDir, arg);
       if (!existsSync(p)) { console.error(`"${arg}" nu există în knowledge/.`); process.exit(1); }
       console.log(readFileSync(p, 'utf-8'));
       break;
     }
     case 'add': {
-      if (!arg) { console.error('Utilizare: nova knowledge add <titlu>'); process.exit(1); }
+      if (!arg) { console.error('Utilizare: myheros knowledge add <titlu>'); process.exit(1); }
       mkdirSync(knowledgeDir, { recursive: true });
       const filename = arg.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') + '.md';
       const p = join(knowledgeDir, filename);
@@ -455,16 +455,16 @@ export function cmdKnowledge(sub: string, arg?: string): void {
       break;
     }
     default:
-      console.error('Utilizare: nova knowledge list|show <fișier>|add <titlu>');
+      console.error('Utilizare: myheros knowledge list|show <fișier>|add <titlu>');
       process.exit(1);
   }
 }
 
-// ── nova chat <agent> <mesaj> ─────────────────────────────────
+// ── myheros chat <agent> <mesaj> ─────────────────────────────────
 // Trimite mesaj și urmărește output-ul agentului live (60s)
 export async function cmdChat(name: string, message: string): Promise<void> {
   if (!name || !message) {
-    console.error('Utilizare: nova chat <agent> "<mesaj>"');
+    console.error('Utilizare: myheros chat <agent> "<mesaj>"');
     process.exit(1);
   }
 
@@ -487,7 +487,7 @@ export async function cmdChat(name: string, message: string): Promise<void> {
   }, null, 2));
 
   console.log(`\x1b[32m→ Mesaj trimis la "${name}"\x1b[0m`);
-  console.log(`\x1b[2m[nova chat] Output live (60s). Ctrl+C pentru a ieși.\x1b[0m\n`);
+  console.log(`\x1b[2m[myheros chat] Output live (60s). Ctrl+C pentru a ieși.\x1b[0m\n`);
 
   // Tail output agentului pentru 60s după trimitere
   const initial = await sendCommand({ command: 'output', agent: name }) as { ok: boolean; lines?: string[] };
@@ -508,7 +508,7 @@ export async function cmdChat(name: string, message: string): Promise<void> {
         idleSeconds++;
         if (idleSeconds >= IDLE_TIMEOUT) {
           clearInterval(timer);
-          process.stderr.write(`\n\x1b[2m[nova chat] 60s fără output nou. Ieșire.\x1b[0m\n`);
+          process.stderr.write(`\n\x1b[2m[myheros chat] 60s fără output nou. Ieșire.\x1b[0m\n`);
           process.exit(0);
         }
       }
@@ -521,44 +521,44 @@ export async function cmdChat(name: string, message: string): Promise<void> {
 
 export function cmdHelp(): void {
   console.log(`
-Nova Cortex CLI
+My HerOS CLI
 
 COMENZI:
-  nova setup                          Wizard de configurare (prima rulare)
-  nova status                         Listeaza toti agentii si statusul
-  nova start <agent>                  Porneste un agent
-  nova stop <agent>                   Opreste un agent
-  nova enable <agent>                 Activeaza un agent (persistent)
-  nova disable <agent>                Dezactiveaza un agent (persistent)
-  nova heartbeats                     Afiseaza heartbeat-urile tuturor agentilor
-  nova logs <agent>                   Urmareste output-ul live al unui agent
-  nova report <agent>                 Afiseaza ultimul raport de sesiune
-  nova chat <agent> <msg>             Trimite mesaj si urmareste raspunsul live
-  nova knowledge list                 Listeaza fisierele din knowledge base
-  nova knowledge show <fisier>        Afiseaza continutul unui fisier
-  nova knowledge add <titlu>          Creeaza un fisier nou in knowledge base
-  nova bus <agent> <msg>              Trimite un mesaj prin bus
-  nova doctor                         Diagnostic complet al sistemului
-  nova add-agent <name>               Creeaza un agent nou (gol)
-  nova add-agent <name> --template T  Creeaza din template (cto/researcher/writer/monitor)
-  nova list-templates                 Listeaza templatele disponibile
-  nova community                      Afiseaza catalogul de agenti community
-  nova import <name>                  Importa un agent din templates sau community
-  nova tunnel start                   Porneste tunel cloudflared (acces remote)
-  nova tunnel stop                    Opreste tunelul
-  nova tunnel status                  Statusul tunelului + URL public
-  nova tunnel url                     Afiseaza URL-ul public curent
-  nova service install                Instaleaza serviciu launchd (macOS)
-  nova service uninstall              Dezinstaleaza serviciul
-  nova service status                 Statusul serviciului
+  myheros setup                          Wizard de configurare (prima rulare)
+  myheros status                         Listeaza toti agentii si statusul
+  myheros start <agent>                  Porneste un agent
+  myheros stop <agent>                   Opreste un agent
+  myheros enable <agent>                 Activeaza un agent (persistent)
+  myheros disable <agent>                Dezactiveaza un agent (persistent)
+  myheros heartbeats                     Afiseaza heartbeat-urile tuturor agentilor
+  myheros logs <agent>                   Urmareste output-ul live al unui agent
+  myheros report <agent>                 Afiseaza ultimul raport de sesiune
+  myheros chat <agent> <msg>             Trimite mesaj si urmareste raspunsul live
+  myheros knowledge list                 Listeaza fisierele din knowledge base
+  myheros knowledge show <fisier>        Afiseaza continutul unui fisier
+  myheros knowledge add <titlu>          Creeaza un fisier nou in knowledge base
+  myheros bus <agent> <msg>              Trimite un mesaj prin bus
+  myheros doctor                         Diagnostic complet al sistemului
+  myheros add-agent <name>               Creeaza un agent nou (gol)
+  myheros add-agent <name> --template T  Creeaza din template (cto/researcher/writer/monitor)
+  myheros list-templates                 Listeaza templatele disponibile
+  myheros community                      Afiseaza catalogul de agenti community
+  myheros import <name>                  Importa un agent din templates sau community
+  myheros tunnel start                   Porneste tunel cloudflared (acces remote)
+  myheros tunnel stop                    Opreste tunelul
+  myheros tunnel status                  Statusul tunelului + URL public
+  myheros tunnel url                     Afiseaza URL-ul public curent
+  myheros service install                Instaleaza serviciu launchd (macOS)
+  myheros service uninstall              Dezinstaleaza serviciul
+  myheros service status                 Statusul serviciului
 
 EXEMPLE:
-  nova status
-  nova enable researcher
-  nova heartbeats
-  nova add-agent myagent --template researcher
-  nova import cto
-  nova tunnel start
-  nova bus orchestrator "Analizeaza tendintele AI din 2025"
+  myheros status
+  myheros enable researcher
+  myheros heartbeats
+  myheros add-agent myagent --template researcher
+  myheros import cto
+  myheros tunnel start
+  myheros bus orchestrator "Analizeaza tendintele AI din 2025"
 `);
 }

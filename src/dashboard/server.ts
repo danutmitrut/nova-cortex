@@ -147,7 +147,7 @@ export class DashboardServer {
     const htmlPath = new URL('./index.html', import.meta.url).pathname;
     const html = existsSync(htmlPath)
       ? readFileSync(htmlPath, 'utf8')
-      : '<h1>Nova Cortex</h1><p>index.html lipsește</p>';
+      : '<h1>My HerOS</h1><p>index.html lipsește</p>';
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(html);
   }
@@ -158,7 +158,7 @@ export class DashboardServer {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nova Cortex — Login</title>
+<title>My HerOS — Login</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'SF Mono', 'Fira Code', monospace; background: #0d0d0d; color: #e0e0e0; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
@@ -176,7 +176,7 @@ export class DashboardServer {
 </head>
 <body>
 <div class="card">
-  <h1>⬡ Nova Cortex</h1>
+  <h1>⬡ My HerOS</h1>
   <p>Introdu token-ul de acces din consolă.</p>
   <label for="token">Token</label>
   <input type="password" id="token" placeholder="••••••••••••••••" autofocus />

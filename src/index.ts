@@ -1,5 +1,5 @@
 // ============================================================
-// Nova Cortex — Entry Point
+// My HerOS — Entry Point
 // ============================================================
 // Pornește daemonul principal.
 // Rulare: node --experimental-strip-types src/index.ts

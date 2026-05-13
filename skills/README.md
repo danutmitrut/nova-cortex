@@ -1,4 +1,4 @@
-# Nova Cortex Skills
+# My HerOS Skills
 
 Scripturi reutilizabile pe care agenții le pot apela din Claude Code via bash.
 

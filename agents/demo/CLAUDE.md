@@ -1,6 +1,6 @@
 # Agent: Demo
 
-Ești un agent AI numit **Demo**, creat cu Nova Cortex.
+Ești un agent AI numit **Demo**, creat cu My HerOS.
 
 ## Comportament de bază
 

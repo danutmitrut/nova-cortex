@@ -1,10 +1,10 @@
 // ============================================================
 // Tunnel CLI — acces remote la dashboard via cloudflared
 // ============================================================
-// nova tunnel start   — porneste tunel cloudflared la port 4242
-// nova tunnel stop    — opreste tunelul activ
-// nova tunnel status  — verifica daca tunelul ruleaza
-// nova tunnel url     — afiseaza URL-ul public curent
+// myheros tunnel start   — porneste tunel cloudflared la port 4242
+// myheros tunnel stop    — opreste tunelul activ
+// myheros tunnel status  — verifica daca tunelul ruleaza
+// myheros tunnel url     — afiseaza URL-ul public curent
 // ============================================================
 
 import { existsSync, writeFileSync, readFileSync, mkdirSync, createWriteStream, unlinkSync } from 'fs';
@@ -49,7 +49,7 @@ export async function cmdTunnel(sub: string): Promise<void> {
     case 'url':
       return tunnelUrl();
     default:
-      console.error('Utilizare: nova tunnel start|stop|status|url');
+      console.error('Utilizare: myheros tunnel start|stop|status|url');
       process.exit(1);
   }
 }
@@ -92,7 +92,7 @@ function tunnelStart(): void {
 
   console.log(`Tunel pornit (PID ${child.pid}). Asteapta URL-ul...`);
   console.log('(poate dura 5-10 secunde)');
-  console.log('Ruleaza "nova tunnel url" pentru a vedea URL-ul public.');
+  console.log('Ruleaza "myheros tunnel url" pentru a vedea URL-ul public.');
 }
 
 function tunnelStop(): void {

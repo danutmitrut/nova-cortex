@@ -1,5 +1,5 @@
 // ============================================================
-// Daemon — procesul central Nova Cortex
+// Daemon — procesul central My HerOS
 // ============================================================
 // Responsabilități:
 //   - Descoperă automat toți agenții din agents/*/config.json
@@ -9,7 +9,7 @@
 //   - La oprire (SIGINT/SIGTERM) oprește toți agenții ordonat
 //
 // Analogie: PM2 este daemonul pentru procese Node.js.
-//           Nova Cortex Daemon este PM2-ul pentru agenți Claude.
+//           My HerOS Daemon este PM2-ul pentru agenți Claude.
 // ============================================================
 
 import { readdirSync, existsSync, readFileSync, mkdirSync } from 'fs';
@@ -44,7 +44,7 @@ export class Daemon {
 
   // ── Pornește daemonul ────────────────────────────────────────
   async start(): Promise<void> {
-    console.log('[daemon] Nova Cortex pornit.');
+    console.log('[daemon] My HerOS pornit.');
     console.log(`[daemon] Caut agenți în: ${this.agentsDir}`);
 
     const findings = runSecurityScan(this.agentsDir, this.knowledgeDir);
@@ -82,7 +82,7 @@ export class Daemon {
 
       // Verifica daca agentul e dezactivat in registry
       if (!this.registry.isEnabled(entry.name)) {
-        console.log(`[daemon] Ignorat ${entry.name} — dezactivat (nova enable ${entry.name} pentru a reactiva)`);
+        console.log(`[daemon] Ignorat ${entry.name} — dezactivat (myheros enable ${entry.name} pentru a reactiva)`);
         continue;
       }
 

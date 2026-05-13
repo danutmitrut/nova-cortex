@@ -1,12 +1,12 @@
 {
-  "name": "nova-cortex",
+  "name": "my-heros",
   "version": "0.1.0",
   "description": "Multi-agent orchestration system",
   "type": "module",
   "scripts": {
     "build": "tsc",
     "dev": "node --experimental-strip-types src/index.ts",
-    "nova": "node --experimental-strip-types src/nova.ts",
+    "myheros": "node --experimental-strip-types src/myheros.ts",
     "setup": "node --experimental-strip-types src/onboarding/wizard.ts",
     "postinstall": "node -e \"const{platform}=require('os'),{execSync}=require('child_process');if(platform()!=='win32')try{execSync('chmod +x node_modules/node-pty/prebuilds/darwin-arm64/spawn-helper node_modules/node-pty/prebuilds/darwin-x64/spawn-helper',{stdio:'ignore'})}catch{}\""
   },
