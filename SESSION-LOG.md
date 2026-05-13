@@ -2,6 +2,28 @@
 
 ---
 
+## 2026-05-13 — Rebrand Nova Cortex → My HerOS
+
+LUCRAT:
+- Redenumit sistemul din "Nova Cortex" în "My HerOS"
+- CLI command `nova` → `myheros` în toate fișierele
+- `src/nova.ts` redenumit în `src/myheros.ts`
+- `package.json`: name="my-heros", script "nova" → "myheros"
+- IPC socket: `nova-cortex.sock` → `myheros.sock`
+- launchd label: `com.novacortex.daemon` → `com.myheros.daemon`
+- Windows task + VBS: `NovaCortex` → `MyHerOS`, `nova-daemon.vbs` → `myheros-daemon.vbs`
+- `install.sh` + `install.ps1`: binary și URL-uri actualizate
+- Repo GitHub redenumit `nova-cortex` → `my-heros` via `gh repo rename`
+- Remote local actualizat la `https://github.com/danutmitrut/my-heros.git`
+- 37 fișiere modificate, 242 înlocuiri
+
+DECIZII:
+- Rebranding complet la "My HerOS" cu CLI `myheros` (propus de user)
+- Repo redenumit direct din terminal via GitHub CLI (nu manual în browser)
+- Prefixele interne `NC_` păstrate (env vars interne, nu user-facing)
+
+---
+
 ## 2026-05-12 — Onboarding, cron, skills, CLI complet
 
 LUCRAT:
